@@ -72,7 +72,34 @@ The desktop app also reads:
 
 ---
 
-## Step 2 — First-time setup (credentials)
+---
+
+## Step 2 — Generate an Atlassian API token
+
+Before configuring the skill, you need to generate a personal API token.
+
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+   > (You'll be signed in with your Atlassian Cloud account)
+2. Click **Create API token with scopes**
+3. Fill in:
+   - **Name** — e.g. `Copilot Skill`
+   - **App** — select **Jira** and **Confluence** (both, so the skill has access to each)
+   - **Scopes** — select these (all read + write):
+     - `read:jira-work`
+     - `write:jira-work`
+     - `read:confluence-content.all`
+     - `write:confluence-content`
+   - **Expires in** — set to **90 days** (or your team's max allowed)
+4. Click **Create**
+5. **Copy the token immediately** — it looks like `ATATT3xFfGF0...` and starts with `ATATT`
+   > ⚠️ You will not be able to see the token again after closing the dialog. If lost, revoke and create a new one.
+6. Store it somewhere safe temporarily (you'll paste it into the config in the next step).
+
+> **Note:** If your organisation uses SSO for Atlassian, you may need to use `Create API token` (Classic) instead. The scopes above are for the newer scoped-token flow.
+
+---
+
+## Step 3 — Configure the skill
 
 You have **two options** to configure your credentials.
 
@@ -96,7 +123,7 @@ $EDITOR ~/.copilot/atlassian-config.json
 
 Fill in three fields:
 - `email` — your Atlassian account email
-- `api_token` — from https://id.atlassian.com/manage-profile/security/api-tokens
+- `api_token` — the token you generated in Step 2 (starts with `ATATT...`)
 - `site` — e.g. `your-org.atlassian.net`
 
 Leave `token` and `cloudId` empty — the skill auto-fills them on first use.
@@ -114,7 +141,7 @@ You will be prompted for:
 | Field | Example |
 |-------|---------|
 | Email | `you@yourcompany.com` |
-| API Token | `ATATT3x...` (from Atlassian token page) |
+| API Token | `ATATT3x...` (from Step 2) |
 | Site URL | `https://your-org.atlassian.net` |
 
 The skill will:
@@ -126,7 +153,7 @@ The skill will:
 
 ---
 
-## Step 3 — Verify
+## Step 4 — Verify
 
 ```
 /atlassian status
