@@ -23,12 +23,41 @@ Works via direct Atlassian REST API calls using your Personal Access Token (PAT)
 
 ## Install
 
-See [INSTALL.md](./INSTALL.md) for full setup instructions.
+Pick your client and paste the matching prompt into your Copilot chat (Agent mode):
 
-**TL;DR:**
+### VS Code Copilot Chat
+
 ```
-install skill from https://github.com/stevez-manulife/copilot-skills/tree/main/skills/atlassian
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/install.prompt.md
 ```
+
+### GitHub Copilot CLI
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-cli/install.prompt.md
+```
+
+### GitHub Copilot Desktop App
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-app/install.prompt.md
+```
+
+### Claude Code
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/claude-code/install.prompt.md
+```
+
+The agent reads the file, installs the skill to the correct folder for your client, and walks you through interactive setup (email, API token, site URL).
+
+> Requires **Agent mode** (terminal + edit tool access).
+
+For manual install steps, see [INSTALL.md](./INSTALL.md).
 
 Then run `/atlassian setup` to configure your credentials.
 
