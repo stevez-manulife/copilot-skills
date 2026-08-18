@@ -44,9 +44,29 @@ VS Code prompt files can be installed in two places:
 | **User-wide (recommended)** | `%APPDATA%\Code\User\prompts\atlassian.prompt.md` | All your VS Code workspaces |
 | **Project-only** | `<repo>/.github/prompts/atlassian.prompt.md` | Just this repo — teammates get it via git |
 
-### Option A — User-wide install (recommended)
+### Option A — One-shot install prompt (easiest)
 
-**Windows PowerShell:**
+Open VS Code Copilot Chat in **Agent mode** and paste:
+
+```
+Set up the Atlassian Copilot skill for me using the guide at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/INSTALL.md
+and the prompt file at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/atlassian.prompt.md.
+Install it to my VS Code user prompts folder, then start the /atlassian setup
+flow so I can enter my Atlassian email, API token, and site URL.
+```
+
+Copilot Agent will:
+1. Fetch the prompt file from GitHub
+2. Copy it to `%APPDATA%\Code\User\prompts\atlassian.prompt.md` (Windows) or `~/Library/Application Support/Code/User/prompts/atlassian.prompt.md` (Mac)
+3. Continue with `/atlassian setup` and interactively ask for your credentials
+4. Save config to `~/.copilot/atlassian-config.json`
+
+> Requires **Agent mode** (terminal + edit tool access). If you're in Ask mode, switch to Agent from the dropdown at the top of the chat panel.
+
+### Option B — Manual copy (Windows PowerShell)
+
 ```powershell
 git clone --depth 1 https://github.com/stevez-manulife/copilot-skills.git $env:TEMP\cs
 New-Item -ItemType Directory -Path "$env:APPDATA\Code\User\prompts" -Force
@@ -54,7 +74,8 @@ Copy-Item "$env:TEMP\cs\skills\atlassian\vscode\atlassian.prompt.md" "$env:APPDA
 Remove-Item "$env:TEMP\cs" -Recurse -Force
 ```
 
-**Mac/Linux:**
+### Option C — Manual copy (Mac/Linux)
+
 ```bash
 git clone --depth 1 https://github.com/stevez-manulife/copilot-skills.git /tmp/cs
 mkdir -p ~/Library/Application\ Support/Code/User/prompts
@@ -62,9 +83,7 @@ cp /tmp/cs/skills/atlassian/vscode/atlassian.prompt.md ~/Library/Application\ Su
 rm -rf /tmp/cs
 ```
 
-VS Code automatically discovers `.prompt.md` files in `Code/User/prompts/`. No restart needed.
-
-### Option B — Project-only install (committed to a repo)
+### Option D — Project-only install (committed to a repo)
 
 Use this if you want the skill to be available for a specific project and shared with teammates via git:
 
@@ -78,9 +97,15 @@ git add .github/prompts/atlassian.prompt.md
 git commit -m "Add /atlassian Copilot skill for Jira & Confluence"
 ```
 
+VS Code automatically discovers `.prompt.md` files in `Code/User/prompts/` and `.github/prompts/`. No restart needed.
+
 ---
 
 ## Step 3 — First run: configure credentials
+
+> If you used **Step 2 Option A** (one-shot install prompt), Copilot already ran this step for you interactively. Skip to Step 4.
+
+If you used a manual install (Options B/C/D), configure credentials now:
 
 1. Open VS Code Copilot Chat (`Ctrl+Alt+I` or the chat icon in the sidebar).
 2. In the chat input, type:
@@ -96,9 +121,7 @@ git commit -m "Add /atlassian Copilot skill for Jira & Confluence"
    - Fetches your `cloudId` from Atlassian
    - Saves everything to `~/.copilot/atlassian-config.json`
 
-> **What "install skill from URL" does NOT do:**
-> The natural-language `install skill from URL` prompt is a **Copilot desktop app** feature and does not exist in VS Code.
-> In VS Code, the install is **manual copy of the prompt file** (Step 2), and the setup is **interactive within `/atlassian setup`** (Step 3). No credentials are ever downloaded or embedded from the repo — you always enter them yourself locally.
+Your API token is only stored **locally on your machine** in `~/.copilot/atlassian-config.json` — never sent to the repo, never uploaded anywhere except direct calls to `*.atlassian.net`.
 
 ---
 
