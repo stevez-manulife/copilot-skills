@@ -1,6 +1,7 @@
 ---
 name: atlassian
 description: Query and update Jira issues and Confluence pages using the Atlassian MCP API. Atlassian Cloud only. Works on Windows and Mac.
+disable-model-invocation: true
 allowed-tools: PowerShell(*) Bash(python:*) Bash(python3:*)
 ---
 

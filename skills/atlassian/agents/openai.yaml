@@ -1,0 +1,5 @@
+interface:
+  display_name: "Atlassian"
+  short_description: "Query and update Jira & Confluence"
+policy:
+  allow_implicit_invocation: false

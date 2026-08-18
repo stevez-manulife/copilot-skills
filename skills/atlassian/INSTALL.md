@@ -2,7 +2,10 @@
 
 ## Prerequisites
 
-1. **GitHub Copilot desktop app** installed and signed in
+1. **GitHub Copilot** — one of:
+   - Copilot **desktop app**
+   - Copilot **CLI** (`gh copilot` / `~/.agents/skills/`)
+   - VS Code Copilot Chat with skill support
 2. **Atlassian Cloud account** (e.g. `your-org.atlassian.net`)
 3. **Atlassian API token** — generate one at:
    https://id.atlassian.com/manage-profile/security/api-tokens
@@ -22,17 +25,50 @@ install skill from https://github.com/stevez-manulife/copilot-skills/tree/main/s
 
 Copilot will download and register the skill automatically.
 
-### Option B: Manual
+### Option B: Manual — global (all projects, one user)
 
-1. Find your Copilot skills folder:
-   - **Windows:** `%APPDATA%\com.github.githubapp\app-skills\`
-   - **Mac:** `~/Library/Application Support/com.github.githubapp/app-skills/`
+Install to your user-level skills folder so it's available in every project you open:
 
-2. Create a folder named `atlassian` inside it.
+- **Windows:** `%USERPROFILE%\.agents\skills\atlassian\`
+- **Mac/Linux:** `~/.agents/skills/atlassian/`
 
-3. Download [SKILL.md](./SKILL.md) and place it in that folder.
+Copy the entire `skills/atlassian/` folder contents (including `SKILL.md` and `agents/`) into that location, then restart Copilot.
 
-4. Restart the Copilot desktop app.
+Quick clone command:
+```bash
+git clone https://github.com/stevez-manulife/copilot-skills.git /tmp/cs
+mkdir -p ~/.agents/skills/atlassian
+cp -r /tmp/cs/skills/atlassian/* ~/.agents/skills/atlassian/
+```
+
+Windows PowerShell:
+```powershell
+git clone https://github.com/stevez-manulife/copilot-skills.git $env:TEMP\cs
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.agents\skills\atlassian" -Force
+Copy-Item "$env:TEMP\cs\skills\atlassian\*" "$env:USERPROFILE\.agents\skills\atlassian\" -Recurse
+```
+
+### Option C: Manual — project-only (commit to your repo)
+
+Install into a single repo so only that project sees the skill — and teammates get it automatically when they clone:
+
+```
+<your-repo>/.github/skills/atlassian/SKILL.md
+```
+
+> This is the official GitHub Copilot project-level skills location. Any repo with a `.github/skills/<name>/SKILL.md` file exposes that skill in Copilot chat when the repo is open.
+
+Alternative project-level location (Copilot CLI / Matt Pocock skills format):
+
+```
+<your-repo>/.agents/skills/atlassian/SKILL.md
+```
+
+### Copilot desktop app (alternative location)
+
+The desktop app also reads:
+- **Windows:** `%APPDATA%\com.github.githubapp\app-skills\atlassian\`
+- **Mac:** `~/Library/Application Support/com.github.githubapp/app-skills/atlassian/`
 
 ---
 
