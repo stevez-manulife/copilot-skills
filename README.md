@@ -8,7 +8,45 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 |-------|-------------|
 | [atlassian](./skills/atlassian/) | Query and update Jira issues and Confluence pages via Atlassian API |
 
-See each skill's README for install instructions.
+---
+
+## Atlassian
+
+Query and update Jira issues and Confluence pages directly from your Copilot chat — no browser, no MCP server required. Works via direct REST API calls using your Atlassian Personal Access Token.
+
+Pick your client and paste the matching prompt into your Copilot chat (**Agent mode**):
+
+**VS Code Copilot Chat**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/install.prompt.md
+```
+
+**GitHub Copilot CLI**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-cli/install.prompt.md
+```
+
+**GitHub Copilot Desktop App**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-app/install.prompt.md
+```
+
+**Claude Code**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/claude-code/install.prompt.md
+```
+
+The agent reads the file, installs the skill to the correct folder for your client, and walks you through interactive setup (email, API token, site URL).
+
+For manual install steps or usage docs, see [skills/atlassian/](./skills/atlassian/).
 
 ---
 
