@@ -12,16 +12,37 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 
 ## Quick Install
 
-### One-shot install (VS Code Copilot Chat, Agent mode)
+Pick your client and paste the matching prompt into your Copilot chat (Agent mode):
 
-Paste this into VS Code Copilot Chat:
+### VS Code Copilot Chat
 
 ```
 Follow the install instructions at
 https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/install.prompt.md
 ```
 
-Copilot Agent reads the file, installs the skill, and walks you through setup interactively.
+### GitHub Copilot CLI
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-cli/install.prompt.md
+```
+
+### GitHub Copilot Desktop App
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/copilot-app/install.prompt.md
+```
+
+### Claude Code
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/claude-code/install.prompt.md
+```
+
+The agent reads the file, installs the skill to the correct folder for your client, and walks you through interactive setup (email, API token, site URL).
 
 > Requires **Agent mode** (terminal + edit tool access).
 
@@ -33,7 +54,7 @@ See [skills/atlassian/INSTALL.md](./skills/atlassian/INSTALL.md).
 
 ## Requirements
 
-- GitHub Copilot Chat in **VS Code** (Agent mode for the one-shot install)
+- One of: VS Code Copilot Chat, Copilot CLI, Copilot desktop app, or Claude Code (Agent mode)
 - Atlassian Cloud account (`*.atlassian.net`)
 - Atlassian API token — see [token generation steps](./skills/atlassian/INSTALL.md#step-1--generate-an-atlassian-api-token)
 
