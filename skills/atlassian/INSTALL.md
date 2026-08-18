@@ -1,165 +1,120 @@
-# Installation Guide
+# Installation Guide — Atlassian Skill for VS Code
+
+This guide installs the Atlassian skill as a **VS Code Copilot Chat prompt file**, so you can invoke `/atlassian` in VS Code's Copilot chat panel.
+
+> Other Copilot clients (CLI, desktop app) will be documented in follow-up guides. For now: **VS Code only**.
+
+---
 
 ## Prerequisites
 
-1. **GitHub Copilot** — one of:
-   - Copilot **desktop app**
-   - Copilot **CLI** (`gh copilot` / `~/.agents/skills/`)
-   - VS Code Copilot Chat with skill support
-2. **Atlassian Cloud account** (e.g. `your-org.atlassian.net`)
-3. **Atlassian API token** — generate one at:
-   https://id.atlassian.com/manage-profile/security/api-tokens
-   > Tip: Set expiry to 90 days (3 months) for long-term use.
+1. **VS Code** with **GitHub Copilot** and **GitHub Copilot Chat** extensions installed
+2. **Atlassian Cloud account** (`*.atlassian.net` — not Data Center/Server)
+3. **PowerShell** (Windows, pre-installed) or **bash** (Mac/Linux)
 
 ---
 
-## Step 1 — Install the skill
-
-### Option A: Via Copilot Chat (easiest)
-
-In the Copilot desktop app chat, type:
-
-```
-install skill from https://github.com/stevez-manulife/copilot-skills/tree/main/skills/atlassian
-```
-
-Copilot will download and register the skill automatically.
-
-### Option B: Manual — global (all projects, one user)
-
-Install to your user-level skills folder so it's available in every project you open:
-
-- **Windows:** `%USERPROFILE%\.agents\skills\atlassian\`
-- **Mac/Linux:** `~/.agents/skills/atlassian/`
-
-Copy the entire `skills/atlassian/` folder contents (including `SKILL.md` and `agents/`) into that location, then restart Copilot.
-
-Quick clone command:
-```bash
-git clone https://github.com/stevez-manulife/copilot-skills.git /tmp/cs
-mkdir -p ~/.agents/skills/atlassian
-cp -r /tmp/cs/skills/atlassian/* ~/.agents/skills/atlassian/
-```
-
-Windows PowerShell:
-```powershell
-git clone https://github.com/stevez-manulife/copilot-skills.git $env:TEMP\cs
-New-Item -ItemType Directory -Path "$env:USERPROFILE\.agents\skills\atlassian" -Force
-Copy-Item "$env:TEMP\cs\skills\atlassian\*" "$env:USERPROFILE\.agents\skills\atlassian\" -Recurse
-```
-
-### Option C: Manual — project-only (commit to your repo)
-
-Install into a single repo so only that project sees the skill — and teammates get it automatically when they clone:
-
-```
-<your-repo>/.github/skills/atlassian/SKILL.md
-```
-
-> This is the official GitHub Copilot project-level skills location. Any repo with a `.github/skills/<name>/SKILL.md` file exposes that skill in Copilot chat when the repo is open.
-
-Alternative project-level location (Copilot CLI / Matt Pocock skills format):
-
-```
-<your-repo>/.agents/skills/atlassian/SKILL.md
-```
-
-### Copilot desktop app (alternative location)
-
-The desktop app also reads:
-- **Windows:** `%APPDATA%\com.github.githubapp\app-skills\atlassian\`
-- **Mac:** `~/Library/Application Support/com.github.githubapp/app-skills/atlassian/`
-
----
-
----
-
-## Step 2 — Generate an Atlassian API token
-
-Before configuring the skill, you need to generate a personal API token.
+## Step 1 — Generate an Atlassian API token
 
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
-   > (You'll be signed in with your Atlassian Cloud account)
 2. Click **Create API token with scopes**
 3. Fill in:
-   - **Name** — e.g. `Copilot Skill`
-   - **App** — select **Jira** and **Confluence** (both, so the skill has access to each)
-   - **Scopes** — select these (all read + write):
+   - **Name** — e.g. `VS Code Copilot Skill`
+   - **App** — select **Jira** and **Confluence**
+   - **Scopes** — check all four:
      - `read:jira-work`
      - `write:jira-work`
      - `read:confluence-content.all`
      - `write:confluence-content`
-   - **Expires in** — set to **90 days** (or your team's max allowed)
+   - **Expires in** — set to **90 days** (or your team's max)
 4. Click **Create**
-5. **Copy the token immediately** — it looks like `ATATT3xFfGF0...` and starts with `ATATT`
-   > ⚠️ You will not be able to see the token again after closing the dialog. If lost, revoke and create a new one.
-6. Store it somewhere safe temporarily (you'll paste it into the config in the next step).
+5. **Copy the token immediately** — starts with `ATATT3xFfGF0...`
+   > ⚠️ You cannot view it again after closing the dialog. If lost, revoke and create a new one.
 
-> **Note:** If your organisation uses SSO for Atlassian, you may need to use `Create API token` (Classic) instead. The scopes above are for the newer scoped-token flow.
+Keep this token in a safe place — you'll paste it into the config file in Step 3.
 
 ---
 
-## Step 3 — Configure the skill
+## Step 2 — Install the prompt file
 
-You have **two options** to configure your credentials.
+VS Code prompt files can be installed in two places:
 
-### Option A — Edit the config file directly (best for token rotation)
+| Scope | Location | Available in |
+|-------|----------|--------------|
+| **User-wide (recommended)** | `%APPDATA%\Code\User\prompts\atlassian.prompt.md` | All your VS Code workspaces |
+| **Project-only** | `<repo>/.github/prompts/atlassian.prompt.md` | Just this repo — teammates get it via git |
 
-Copy the template that ships with the skill:
+### Option A — User-wide install (recommended)
 
-**Windows:**
+**Windows PowerShell:**
 ```powershell
-New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force
-Copy-Item "$env:USERPROFILE\.agents\skills\atlassian\atlassian-config.example.json" "$env:USERPROFILE\.copilot\atlassian-config.json"
-notepad "$env:USERPROFILE\.copilot\atlassian-config.json"
+git clone --depth 1 https://github.com/stevez-manulife/copilot-skills.git $env:TEMP\cs
+New-Item -ItemType Directory -Path "$env:APPDATA\Code\User\prompts" -Force
+Copy-Item "$env:TEMP\cs\skills\atlassian\vscode\atlassian.prompt.md" "$env:APPDATA\Code\User\prompts\atlassian.prompt.md"
+Remove-Item "$env:TEMP\cs" -Recurse -Force
 ```
 
 **Mac/Linux:**
 ```bash
-mkdir -p ~/.copilot
-cp ~/.agents/skills/atlassian/atlassian-config.example.json ~/.copilot/atlassian-config.json
-$EDITOR ~/.copilot/atlassian-config.json
+git clone --depth 1 https://github.com/stevez-manulife/copilot-skills.git /tmp/cs
+mkdir -p ~/Library/Application\ Support/Code/User/prompts
+cp /tmp/cs/skills/atlassian/vscode/atlassian.prompt.md ~/Library/Application\ Support/Code/User/prompts/atlassian.prompt.md
+rm -rf /tmp/cs
 ```
 
-Fill in three fields:
-- `email` — your Atlassian account email
-- `api_token` — the token you generated in Step 2 (starts with `ATATT...`)
-- `site` — e.g. `your-org.atlassian.net`
+VS Code automatically discovers `.prompt.md` files in `Code/User/prompts/`. No restart needed.
 
-Leave `token` and `cloudId` empty — the skill auto-fills them on first use.
+### Option B — Project-only install (committed to a repo)
 
-### Option B — Interactive setup via Copilot chat
+Use this if you want the skill to be available for a specific project and shared with teammates via git:
 
-In Copilot chat, run:
-
+```powershell
+# From your repo root:
+git clone --depth 1 https://github.com/stevez-manulife/copilot-skills.git $env:TEMP\cs
+New-Item -ItemType Directory -Path ".\.github\prompts" -Force
+Copy-Item "$env:TEMP\cs\skills\atlassian\vscode\atlassian.prompt.md" ".\.github\prompts\atlassian.prompt.md"
+Remove-Item "$env:TEMP\cs" -Recurse -Force
+git add .github/prompts/atlassian.prompt.md
+git commit -m "Add /atlassian Copilot skill for Jira & Confluence"
 ```
-/atlassian setup
-```
 
-You will be prompted for:
+---
 
-| Field | Example |
-|-------|---------|
-| Email | `you@yourcompany.com` |
-| API Token | `ATATT3x...` (from Step 2) |
-| Site URL | `https://your-org.atlassian.net` |
+## Step 3 — First run: configure credentials
 
-The skill will:
-- Encode your credentials as Basic auth
-- Auto-fetch your `cloudId` from Atlassian
-- Save config to `~/.copilot/atlassian-config.json`
+1. Open VS Code Copilot Chat (`Ctrl+Alt+I` or the chat icon in the sidebar).
+2. In the chat input, type:
+   ```
+   /atlassian setup
+   ```
+3. Copilot will read the prompt file and **interactively ask you** for:
+   - **Email** — your Atlassian account email
+   - **API token** — the `ATATT...` token from Step 1
+   - **Site** — e.g. `your-org.atlassian.net`
+4. Copilot then runs a PowerShell (or bash) snippet that:
+   - Base64-encodes your credentials
+   - Fetches your `cloudId` from Atlassian
+   - Saves everything to `~/.copilot/atlassian-config.json`
 
-> **Security note:** Your credentials are stored locally on your machine only — never sent anywhere except directly to `atlassian.net` APIs, and never committed to the skill's git repo.
+> **What "install skill from URL" does NOT do:**
+> The natural-language `install skill from URL` prompt is a **Copilot desktop app** feature and does not exist in VS Code.
+> In VS Code, the install is **manual copy of the prompt file** (Step 2), and the setup is **interactive within `/atlassian setup`** (Step 3). No credentials are ever downloaded or embedded from the repo — you always enter them yourself locally.
 
 ---
 
 ## Step 4 — Verify
 
+Type in Copilot Chat:
+
 ```
 /atlassian status
 ```
 
-Should show your site URL and cloudId if setup was successful.
+You should see your `site` and `cloudId`. Try a real command:
+
+```
+/atlassian my issues
+```
 
 ---
 
@@ -168,28 +123,42 @@ Should show your site URL and cloudId if setup was successful.
 ```
 /atlassian my issues
 /atlassian issue PROJ-123
-/atlassian create issue
-/atlassian search open bugs in project GRIP
-/atlassian search confluence for onboarding guide
+/atlassian comment PROJ-123
+/atlassian search "assignee = currentUser() AND status = 'In Review'"
+/atlassian search confluence for "onboarding guide"
+/atlassian page 17867538466
 ```
+
+---
+
+## Rotating an Expired Token
+
+When your API token expires (~90 days):
+
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens and create a new token
+2. Open `~/.copilot/atlassian-config.json` in any editor (VS Code, notepad, etc.)
+3. Replace the `api_token` value with the new token
+4. Set `token` to `""` (empty) — the skill will re-derive it
+5. Save
+
+Next call regenerates the Basic auth header from the new token. No re-setup needed.
+
+---
+
+## Updating the skill
+
+To pull the latest version, re-run the install command from Step 2 (Option A or B) — it overwrites the prompt file.
+
+Your credentials in `~/.copilot/atlassian-config.json` are untouched.
 
 ---
 
 ## Troubleshooting
 
-| Error | Fix |
-|-------|-----|
-| `403 Forbidden` / `401 Unauthorized` | API token expired — edit `~/.copilot/atlassian-config.json` and update `api_token`, then clear the `token` field so the skill regenerates it |
-| `~/.copilot/atlassian-config.json not found` | Run `/atlassian setup` or copy the example file (see Step 2 Option A) |
-| `User-Agent` errors | Skill handles this automatically — update to latest version |
-| Token expired | Generate a new one at https://id.atlassian.com/manage-profile/security/api-tokens and paste it into `api_token` in the config file |
-
----
-
-## Updating
-
-To update to the latest version of the skill, re-run the install command in Copilot chat:
-
-```
-install skill from https://github.com/stevez-manulife/copilot-skills/tree/main/skills/atlassian
-```
+| Problem | Fix |
+|---------|-----|
+| `/atlassian` doesn't appear in Copilot Chat autocomplete | Check the file exists at `%APPDATA%\Code\User\prompts\atlassian.prompt.md` (Windows) or `~/Library/Application Support/Code/User/prompts/atlassian.prompt.md` (Mac). Restart the Copilot Chat panel. |
+| `401 Unauthorized` / `403 Forbidden` | Token expired or wrong — see [Rotating an Expired Token](#rotating-an-expired-token). |
+| `~/.copilot/atlassian-config.json not found` | Run `/atlassian setup` in Copilot Chat. |
+| `410 Gone` on search | You're hitting deprecated Jira v2 API. The prompt file uses `/rest/api/3/search/jql` (POST) — make sure you have the latest version. |
+| Prompt file not detected | Check VS Code setting `chat.promptFiles` is enabled: `Ctrl+,` → search "prompt files" → tick the box. |
