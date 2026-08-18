@@ -44,26 +44,18 @@ VS Code prompt files can be installed in two places:
 | **User-wide (recommended)** | `%APPDATA%\Code\User\prompts\atlassian.prompt.md` | All your VS Code workspaces |
 | **Project-only** | `<repo>/.github/prompts/atlassian.prompt.md` | Just this repo — teammates get it via git |
 
-### Option A — One-shot install prompt (easiest)
+### Option A — One-shot install (easiest)
 
 Open VS Code Copilot Chat in **Agent mode** and paste:
 
 ```
-Set up the Atlassian Copilot skill for me using the guide at
-https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/INSTALL.md
-and the prompt file at
-https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/atlassian.prompt.md.
-Install it to my VS Code user prompts folder, then start the /atlassian setup
-flow so I can enter my Atlassian email, API token, and site URL.
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/atlassian/vscode/install.prompt.md
 ```
 
-Copilot Agent will:
-1. Fetch the prompt file from GitHub
-2. Copy it to `%APPDATA%\Code\User\prompts\atlassian.prompt.md` (Windows) or `~/Library/Application Support/Code/User/prompts/atlassian.prompt.md` (Mac)
-3. Continue with `/atlassian setup` and interactively ask for your credentials
-4. Save config to `~/.copilot/atlassian-config.json`
+Copilot Agent will read the file and walk through the whole install: downloading the prompt file, saving it to your VS Code prompts folder, running `/atlassian setup`, asking for your credentials, and verifying everything works.
 
-> Requires **Agent mode** (terminal + edit tool access). If you're in Ask mode, switch to Agent from the dropdown at the top of the chat panel.
+> Requires **Agent mode** (terminal + edit tool access). Switch modes from the dropdown at the top of the chat panel.
 
 ### Option B — Manual copy (Windows PowerShell)
 
