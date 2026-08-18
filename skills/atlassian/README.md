@@ -23,7 +23,7 @@ Works via direct Atlassian REST API calls using your Personal Access Token (PAT)
 
 ## Install
 
-See [../../INSTALL.md](../../INSTALL.md) for full setup instructions.
+See [INSTALL.md](./INSTALL.md) for full setup instructions.
 
 **TL;DR:**
 ```

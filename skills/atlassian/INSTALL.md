@@ -30,7 +30,7 @@ Copilot will download and register the skill automatically.
 
 2. Create a folder named `atlassian` inside it.
 
-3. Download [skills/atlassian/SKILL.md](./skills/atlassian/SKILL.md) and place it in that folder.
+3. Download [SKILL.md](./SKILL.md) and place it in that folder.
 
 4. Restart the Copilot desktop app.
 

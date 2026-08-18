@@ -22,7 +22,7 @@ install skill from https://github.com/stevez-manulife/copilot-skills/tree/main/s
 
 ### Manual Install
 
-See [INSTALL.md](./INSTALL.md) for step-by-step instructions.
+Each skill has its own install guide — see the skill's folder (e.g. [skills/atlassian/INSTALL.md](./skills/atlassian/INSTALL.md)).
 
 ---
 
