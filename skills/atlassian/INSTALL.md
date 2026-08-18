@@ -72,7 +72,36 @@ The desktop app also reads:
 
 ---
 
-## Step 2 — First-time setup
+## Step 2 — First-time setup (credentials)
+
+You have **two options** to configure your credentials.
+
+### Option A — Edit the config file directly (best for token rotation)
+
+Copy the template that ships with the skill:
+
+**Windows:**
+```powershell
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force
+Copy-Item "$env:USERPROFILE\.agents\skills\atlassian\atlassian-config.example.json" "$env:USERPROFILE\.copilot\atlassian-config.json"
+notepad "$env:USERPROFILE\.copilot\atlassian-config.json"
+```
+
+**Mac/Linux:**
+```bash
+mkdir -p ~/.copilot
+cp ~/.agents/skills/atlassian/atlassian-config.example.json ~/.copilot/atlassian-config.json
+$EDITOR ~/.copilot/atlassian-config.json
+```
+
+Fill in three fields:
+- `email` — your Atlassian account email
+- `api_token` — from https://id.atlassian.com/manage-profile/security/api-tokens
+- `site` — e.g. `your-org.atlassian.net`
+
+Leave `token` and `cloudId` empty — the skill auto-fills them on first use.
+
+### Option B — Interactive setup via Copilot chat
 
 In Copilot chat, run:
 
@@ -93,7 +122,7 @@ The skill will:
 - Auto-fetch your `cloudId` from Atlassian
 - Save config to `~/.copilot/atlassian-config.json`
 
-> **Security note:** Your credentials are stored locally on your machine only — never sent anywhere except directly to `atlassian.net` APIs.
+> **Security note:** Your credentials are stored locally on your machine only — never sent anywhere except directly to `atlassian.net` APIs, and never committed to the skill's git repo.
 
 ---
 
@@ -123,10 +152,10 @@ Should show your site URL and cloudId if setup was successful.
 
 | Error | Fix |
 |-------|-----|
-| `403 Forbidden` | API token is wrong or expired — re-run `/atlassian setup` |
-| `~/.copilot/atlassian-config.json not found` | Run `/atlassian setup` first |
+| `403 Forbidden` / `401 Unauthorized` | API token expired — edit `~/.copilot/atlassian-config.json` and update `api_token`, then clear the `token` field so the skill regenerates it |
+| `~/.copilot/atlassian-config.json not found` | Run `/atlassian setup` or copy the example file (see Step 2 Option A) |
 | `User-Agent` errors | Skill handles this automatically — update to latest version |
-| Token expired | Generate a new token at https://id.atlassian.com/manage-profile/security/api-tokens |
+| Token expired | Generate a new one at https://id.atlassian.com/manage-profile/security/api-tokens and paste it into `api_token` in the config file |
 
 ---
 

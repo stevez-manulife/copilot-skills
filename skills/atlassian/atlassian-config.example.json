@@ -1,0 +1,18 @@
+{
+  "_comment": "Fill in the fields below, then save as ~/.copilot/atlassian-config.json (Windows: %USERPROFILE%\\.copilot\\atlassian-config.json)",
+  "_help": {
+    "email": "Your Atlassian account email address (e.g. you@yourcompany.com)",
+    "api_token": "Generate at https://id.atlassian.com/manage-profile/security/api-tokens (recommend 90-day expiry)",
+    "site": "Your Atlassian site domain, no https:// prefix (e.g. your-org.atlassian.net)",
+    "cloudId": "Optional. Leave as '' and skill will auto-fetch on first run",
+    "token": "Optional. Leave as '' and skill will auto-generate from email + api_token"
+  },
+
+  "email": "you@yourcompany.com",
+  "api_token": "REPLACE_WITH_YOUR_ATLASSIAN_API_TOKEN",
+  "site": "your-org.atlassian.net",
+
+  "mcp_url": "https://mcp.atlassian.com/v1/mcp/authv2",
+  "cloudId": "",
+  "token": ""
+}

@@ -41,27 +41,57 @@ Just type a number or describe what you want naturally.
 
 ## First-time setup
 
-If ~/.copilot/atlassian-config.json does not exist, or user types "setup", ask for:
-1. Email address � Atlassian account email
-2. API token � generate at https://id.atlassian.com/manage-profile/security/api-tokens
-3. Atlassian site URL � e.g. https://your-org.atlassian.net
+The skill uses a config file at:
+- **Windows:** `%USERPROFILE%\.copilot\atlassian-config.json`
+- **Mac/Linux:** `~/.copilot/atlassian-config.json`
+
+### Two ways to set it up
+
+**Option 1 — Edit the file directly (recommended for token rotation)**
+
+If the user prefers to fill in credentials themselves, or is rotating an expired token:
+
+1. Copy the template `atlassian-config.example.json` from the skill folder to `~/.copilot/atlassian-config.json`
+2. Open it in a text editor and fill in `email`, `api_token`, `site`
+3. Save
+
+The skill will auto-derive `token` (Base64 Basic auth) and `cloudId` on next run if left blank.
+
+**Option 2 — Interactive setup (`/atlassian setup`)**
+
+If user invokes `/atlassian` and config is missing, or types "setup", walk them through:
+1. Email address — Atlassian account email
+2. API token — generate at https://id.atlassian.com/manage-profile/security/api-tokens
+3. Atlassian site URL — e.g. `https://your-org.atlassian.net`
 
 Then automatically:
-- Encode email:token as Base64 -> Authorization: Basic <base64>
-- Fetch cloudId from https://your-org.atlassian.net/_edge/tenant_info
-- Save to ~/.copilot/atlassian-config.json
+- Encode `email:api_token` as Base64 → `Authorization: Basic <base64>`
+- Fetch `cloudId` from `https://your-org.atlassian.net/_edge/tenant_info`
+- Save to `~/.copilot/atlassian-config.json` (schema below)
 
-Config format:
+### Config file schema
+
 ```json
 {
+  "email": "you@yourcompany.com",
+  "api_token": "ATATT3x...",
+  "site": "your-org.atlassian.net",
   "mcp_url": "https://mcp.atlassian.com/v1/mcp/authv2",
-  "token": "Basic <base64(email:apitoken)>",
-  "cloudId": "<cloudId>",
-  "site": "your-org.atlassian.net"
+  "token": "Basic <base64(email:api_token)>",
+  "cloudId": "<uuid>"
 }
 ```
 
-On subsequent uses, load config automatically � never ask again unless "setup" or config missing.
+`email`, `api_token`, and `site` are the source-of-truth fields. `token` and `cloudId` are cached; if missing, the skill regenerates them from the source fields.
+
+### Handling expired tokens
+
+If any API call returns 401/403 and `email` + `api_token` are present:
+1. Notify user: "Your Atlassian API token appears to be expired or invalid."
+2. Point to file: "Edit `~/.copilot/atlassian-config.json` and update `api_token`, or generate a new token at https://id.atlassian.com/manage-profile/security/api-tokens"
+3. After user updates, clear the cached `token` field so it re-derives from the new `api_token`.
+
+On subsequent uses, load config automatically — never ask again unless config is missing, user types "setup", or authentication fails.
 
 ## How to call the API
 
