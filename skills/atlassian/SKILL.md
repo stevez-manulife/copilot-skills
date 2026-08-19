@@ -1,164 +1,161 @@
 ---
 name: atlassian
-description: Query and update Jira issues and Confluence pages using the Atlassian MCP API. Atlassian Cloud only. Works on Windows and Mac.
+description: Query and update Jira issues and Confluence pages using the Atlassian Cloud REST API. No MCP required. Uses a Personal Access Token stored in ~/.copilot/atlassian-config.json. Works on Windows (PowerShell), Mac, and Linux.
 disable-model-invocation: true
-allowed-tools: PowerShell(*) Bash(python:*) Bash(python3:*)
+allowed-tools: PowerShell(*) Bash(curl:*) Bash(python:*) Bash(python3:*)
 ---
 
 # Atlassian Jira & Confluence Skill
 
-> **Scope: Atlassian Cloud only** (`*.atlassian.net`). Not compatible with Atlassian Data Center or Server.
+> **Scope: Atlassian Cloud only** (`*.atlassian.net`). Not compatible with Data Center or Server.
 
-Access Jira and Confluence directly via the Atlassian MCP API using Python. Works on Windows and Mac.
+Direct REST API access to Jira and Confluence — no MCP server, no proxies. Uses a Personal Access Token (PAT) via HTTP Basic auth.
 
 ## Menu
 
-When the user invokes `/atlassian` without a specific request, show this menu:
+When the user invokes `/atlassian` without a specific request, show:
 
 ```
-Atlassian Skill � What would you like to do?
+Atlassian Skill — What would you like to do?
 
 JIRA
-  1. my issues          � list my open Jira issues
-  2. issue <KEY-123>    � get details of a specific issue
-  3. create issue       � create a new Jira issue
-  4. update <KEY-123>   � update summary, description, or status
-  5. comment <KEY-123>  � add a comment to an issue
-  6. move <KEY-123>     � transition issue to a new status
-  7. search <jql>       � search issues with custom JQL
+  1. my issues          — list my open Jira issues
+  2. issue <KEY-123>    — get details of a specific issue
+  3. create issue       — create a new Jira issue
+  4. update <KEY-123>   — update summary, description, or status
+  5. comment <KEY-123>  — add a comment to an issue
+  6. move <KEY-123>     — transition issue to a new status
+  7. search <jql>       — search issues with custom JQL
 
 CONFLUENCE
-  8. search <query>     � search Confluence pages
-  9. page <pageId>      � get a specific page by ID
- 10. create page        � create a new Confluence page
+  8. search <query>     — search Confluence pages
+  9. page <pageId>      — get a specific page by ID
+ 10. create page        — create a new Confluence page
 
 SETUP
- 11. setup              � configure credentials (first-time or reset)
- 12. status             � show current config (site, cloudId)
+ 11. setup              — configure credentials (first-time or reset)
+ 12. status             — show current config (site, cloudId)
 
 Just type a number or describe what you want naturally.
 ```
 
-## First-time setup
+## Config
 
-The skill uses a config file at:
+File location:
 - **Windows:** `%USERPROFILE%\.copilot\atlassian-config.json`
 - **Mac/Linux:** `~/.copilot/atlassian-config.json`
 
-### Two ways to set it up
-
-**Option 1 — Edit the file directly (recommended for token rotation)**
-
-If the user prefers to fill in credentials themselves, or is rotating an expired token:
-
-1. Copy the template `atlassian-config.example.json` from the skill folder to `~/.copilot/atlassian-config.json`
-2. Open it in a text editor and fill in `email`, `api_token`, `site`
-3. Save
-
-The skill will auto-derive `token` (Base64 Basic auth) and `cloudId` on next run if left blank.
-
-**Option 2 — Interactive setup (`/atlassian setup`)**
-
-If user invokes `/atlassian` and config is missing, or types "setup", walk them through:
-1. Email address — Atlassian account email
-2. API token — generate at https://id.atlassian.com/manage-profile/security/api-tokens
-3. Atlassian site URL — e.g. `https://your-org.atlassian.net`
-
-Then automatically:
-- Encode `email:api_token` as Base64 → `Authorization: Basic <base64>`
-- Fetch `cloudId` from `https://your-org.atlassian.net/_edge/tenant_info`
-- Save to `~/.copilot/atlassian-config.json` (schema below)
-
-### Config file schema
+Schema:
 
 ```json
 {
-  "email": "you@yourcompany.com",
+  "email":     "you@yourcompany.com",
   "api_token": "ATATT3x...",
-  "site": "your-org.atlassian.net",
-  "mcp_url": "https://mcp.atlassian.com/v1/mcp/authv2",
-  "token": "Basic <base64(email:api_token)>",
-  "cloudId": "<uuid>"
+  "site":      "your-org.atlassian.net",
+  "token":     "Basic <base64(email:api_token)>",
+  "cloudId":   "<uuid>"
 }
 ```
 
-`email`, `api_token`, and `site` are the source-of-truth fields. `token` and `cloudId` are cached; if missing, the skill regenerates them from the source fields.
+`email`, `api_token`, `site` are source-of-truth. `token` (auth header) and `cloudId` are derived on first setup and cached.
 
-### Handling expired tokens
+### First-time setup
 
-If any API call returns 401/403 and `email` + `api_token` are present:
-1. Notify user: "Your Atlassian API token appears to be expired or invalid."
-2. Point to file: "Edit `~/.copilot/atlassian-config.json` and update `api_token`, or generate a new token at https://id.atlassian.com/manage-profile/security/api-tokens"
-3. After user updates, clear the cached `token` field so it re-derives from the new `api_token`.
+If config is missing or user types `setup`, ask for `email`, `api_token`, `site` in chat, then run one PowerShell/bash script to fetch `cloudId`, compute `token`, write the file, and verify with `GET /rest/api/3/myself`. See the install prompts under `vscode/`, `copilot-cli/`, etc. for the exact one-liner.
 
-On subsequent uses, load config automatically — never ask again unless config is missing, user types "setup", or authentication fails.
+### Expired token (401/403)
+
+1. Tell the user: "Your Atlassian API token appears expired or invalid."
+2. Point them at: https://id.atlassian.com/manage-profile/security/api-tokens
+3. After they generate a new one, they can either edit `api_token` in the config file directly (leave `token` blank — the skill will re-derive it), or run `/atlassian setup` again.
 
 ## How to call the API
 
-Write Python to a temp file and execute it.
-- Windows: write to %TEMP%\atlassian_query.py, run: python %TEMP%\atlassian_query.py
-- Mac/Linux: write to /tmp/atlassian_query.py, run: python3 /tmp/atlassian_query.py
+**No MCP. No `tools/call` JSON-RPC.** Just direct HTTPS calls to `https://{site}/rest/api/3/*` (Jira) or `https://{site}/wiki/api/v2/*` (Confluence) with the Basic auth header from the config file.
+
+### PowerShell (Windows — preferred)
+
+```powershell
+$c = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Raw | ConvertFrom-Json
+$h = @{ Authorization = $c.token; "User-Agent" = "atlassian-skill"; Accept = "application/json" }
+
+# Example: search my open issues (POST because GET /search was removed May 2025)
+$body = @{ jql = "assignee = currentUser() AND resolution = Unresolved"; fields = @("summary","status","priority"); maxResults = 20 } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "https://$($c.site)/rest/api/3/search/jql" -Headers $h -ContentType "application/json" -Body $body
+```
+
+### Python (Mac / Linux fallback)
 
 ```python
 import json, urllib.request, os
-
-# Load config (cross-platform)
-cfg = json.load(open(os.path.expanduser("~/.copilot/atlassian-config.json")))
-url, cloud_id = cfg["mcp_url"], cfg["cloudId"]
-headers = {
-    "Authorization": cfg["token"],
-    "Content-Type": "application/json",
-    "Accept": "application/json, text/event-stream",
-    "User-Agent": "python-urllib/3.11"
-}
-
-# Initialize MCP session
-res = urllib.request.urlopen(urllib.request.Request(url,
-    json.dumps({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"copilot","version":"1.0"}}}).encode(), headers))
-headers["Mcp-Session-Id"] = res.headers["Mcp-Session-Id"]
-
-# Call tool
-body = json.dumps({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
-    "name": "<TOOL_NAME>",
-    "arguments": {"cloudId": cloud_id, "<ARG>": "<VALUE>"}
-}}).encode()
-raw = urllib.request.urlopen(urllib.request.Request(url, body, headers)).read().decode()
-
-# Parse SSE response
-data = next(line[6:] for line in raw.splitlines() if line.startswith("data:"))
-print(json.loads(data)["result"]["content"][0]["text"])
+c = json.load(open(os.path.expanduser("~/.copilot/atlassian-config.json")))
+h = {"Authorization": c["token"], "User-Agent": "atlassian-skill",
+     "Accept": "application/json", "Content-Type": "application/json"}
+body = json.dumps({"jql":"assignee = currentUser() AND resolution = Unresolved",
+                   "fields":["summary","status","priority"], "maxResults":20}).encode()
+req = urllib.request.Request(f"https://{c['site']}/rest/api/3/search/jql", body, h, method="POST")
+print(urllib.request.urlopen(req).read().decode())
 ```
 
-## Jira Tools
+**Rules:**
+- Always send `User-Agent` — Atlassian's edge returns 403 without it.
+- Jira REST **v2 is gone (410) as of May 2025** — use `/rest/api/3/*` only.
+- `GET /rest/api/3/search` is also removed — use `POST /rest/api/3/search/jql` with a JSON body.
+- Comment bodies and issue descriptions in v3 require **ADF** (Atlassian Document Format), not plain text. See ADF section below.
 
-| Tool | Key Arguments |
-|---|---|
-| searchJiraIssuesUsingJql | jql, limit |
-| getJiraIssue | issueKey |
-| createJiraIssue | projectKey, summary, issueType, description |
-| updateJiraIssue | issueKey, summary |
-| addCommentToJiraIssue | issueKey, comment |
-| transitionJiraIssue | issueKey, transition |
+## Jira REST endpoints
 
-Common JQL queries:
-- My open issues: assignee = currentUser() AND resolution = Unresolved
-- By project: project = <KEY> AND resolution = Unresolved
-- In Review: assignee = currentUser() AND status = "In Review"
-- Recent: assignee = currentUser() ORDER BY updated DESC
+| Action | Method | Endpoint | Notes |
+|---|---|---|---|
+| Search issues | POST | `/rest/api/3/search/jql` | body: `{jql, fields, maxResults}` |
+| Get issue | GET | `/rest/api/3/issue/{issueKey}` | |
+| Create issue | POST | `/rest/api/3/issue` | body: `{fields:{project,summary,issuetype,description(ADF)}}` |
+| Update issue | PUT | `/rest/api/3/issue/{issueKey}` | body: `{fields:{...}}` |
+| Add comment | POST | `/rest/api/3/issue/{issueKey}/comment` | body: `{body: <ADF>}` |
+| List transitions | GET | `/rest/api/3/issue/{issueKey}/transitions` | returns available transition IDs |
+| Transition issue | POST | `/rest/api/3/issue/{issueKey}/transitions` | body: `{transition:{id:"<id>"}}` |
+| Current user | GET | `/rest/api/3/myself` | verification / whoami |
 
-## Confluence Tools
+### Common JQL
 
-| Tool | Key Arguments |
-|---|---|
-| searchConfluenceByText | query, limit |
-| getConfluencePage | pageId |
-| createConfluencePage | spaceKey, title, content (HTML) |
-| updateConfluencePage | pageId, title, content (HTML) |
+- My open issues: `assignee = currentUser() AND resolution = Unresolved`
+- By project: `project = PROJ AND resolution = Unresolved`
+- In Review: `assignee = currentUser() AND status = "In Review"`
+- Recent: `assignee = currentUser() ORDER BY updated DESC`
+
+## Confluence REST endpoints
+
+Confluence uses the `/wiki` prefix and v2 API is the current one.
+
+| Action | Method | Endpoint | Notes |
+|---|---|---|---|
+| Search pages | GET | `/wiki/rest/api/search?cql=<cql>` | e.g. `text ~ "deployment"` |
+| Get page | GET | `/wiki/api/v2/pages/{pageId}?body-format=storage` | |
+| Create page | POST | `/wiki/api/v2/pages` | body: `{spaceId, title, body:{representation:"storage", value:"<html>"}}` |
+| Update page | PUT | `/wiki/api/v2/pages/{pageId}` | must include current `version.number + 1` |
+
+Space ID (for create) can be fetched from `/wiki/api/v2/spaces?keys=<SPACE_KEY>`.
+
+## Atlassian Document Format (ADF)
+
+Jira v3 does **not** accept plain-text descriptions or comments — you must wrap the text in ADF. Minimal ADF for a paragraph:
+
+```json
+{
+  "type": "doc",
+  "version": 1,
+  "content": [
+    { "type": "paragraph",
+      "content": [ { "type": "text", "text": "Your comment text here" } ] }
+  ]
+}
+```
+
+Use this as the `body` field when adding a comment, or as the `description` field when creating/updating an issue.
 
 ## Notes
 
-- Config file: ~/.copilot/atlassian-config.json � cross-platform, created on first use.
-- API token scope: Basic auth with API token gives limited tools. For full Jira/Confluence access, OAuth bearer token is needed.
-- User-Agent header is required � Atlassian MCP blocks requests without it (returns 403).
-- SSE response: Always extract the data: line before JSON parsing.
-- cloudId: Auto-fetched from https://your-org.atlassian.net/_edge/tenant_info during setup.
+- Config file is cross-platform (`~/.copilot/atlassian-config.json`).
+- Basic auth with an API token has the same permissions as the user who created the token.
+- For clients on Windows (VS Code, Copilot CLI), prefer PowerShell examples — avoid inline Python unless the user is on Mac/Linux.
+- Always print concise results back to the user; if the response has many fields, filter to `key`, `summary`, `status.name`, `assignee.displayName`.
