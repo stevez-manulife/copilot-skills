@@ -1,18 +1,18 @@
 ---
 description: "Query and update Jira issues and Confluence pages via Atlassian REST API"
 name: "atlassian"
-argument-hint: "e.g. 'my issues', 'issue PROJ-123', 'setup', 'search bugs'"
+argument-hint: "e.g. 'my issues', 'issue PROJ-123', 'setup', 'update', 'search bugs'"
 ---
 
 # Atlassian Skill (VS Code)
 
-Query and update **Jira issues** and **Confluence pages** using the Atlassian Cloud REST API with a Personal Access Token (PAT).
+Direct REST API access to Jira and Confluence — no MCP, no proxies. Uses a Personal Access Token (PAT) via HTTP Basic auth.
 
-> **Scope:** Atlassian Cloud only (`*.atlassian.net`). Not compatible with Data Center/Server.
+> **Scope: Atlassian Cloud only** (`*.atlassian.net`). Not compatible with Data Center or Server.
 
 ## Menu
 
-When invoked with no arguments (`/atlassian`), show this menu:
+When invoked with no arguments (`/atlassian`), show:
 
 ```
 Atlassian Skill — What would you like to do?
@@ -34,168 +34,161 @@ CONFLUENCE
 SETUP
  11. setup              — configure credentials (first-time or reset)
  12. status             — show current config (site, cloudId)
+ 13. update             — download the latest version of this skill
 
 Just type a number or describe what you want naturally.
 ```
 
-## First-time setup
+## Config
 
-The config file lives at:
-- **Windows:** `%USERPROFILE%\.copilot\atlassian-config.json`
-- **Mac/Linux:** `~/.copilot/atlassian-config.json`
+File location: `%USERPROFILE%\.copilot\atlassian-config.json` (Windows) or `~/.copilot/atlassian-config.json` (Mac/Linux).
 
-### If config is missing, or user says "setup":
-
-Interactively ask for:
-1. **Email** — Atlassian account email
-2. **API token** — from https://id.atlassian.com/manage-profile/security/api-tokens (starts with `ATATT`)
-3. **Site** — e.g. `your-org.atlassian.net` (no `https://` prefix)
-
-Then compute and save the config:
-
-```powershell
-# Windows example (adjust for Mac/Linux with python3)
-$email = "<user email>"
-$apiToken = "<user token>"
-$site = "<user site>"
-
-$auth = "Basic " + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("$email`:$apiToken"))
-
-# Fetch cloudId
-$cloudId = (Invoke-RestMethod -Uri "https://$site/_edge/tenant_info").cloudId
-
-$config = @{
-  email     = $email
-  api_token = $apiToken
-  site      = $site
-  token     = $auth
-  cloudId   = $cloudId
-} | ConvertTo-Json
-
-New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force | Out-Null
-$config | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
-```
-
-Confirm setup succeeded by calling `/rest/api/3/myself` with the new token.
-
-### Config file schema
+Schema:
 
 ```json
 {
-  "email": "you@yourcompany.com",
+  "email":     "you@yourcompany.com",
   "api_token": "ATATT3x...",
-  "site": "your-org.atlassian.net",
-  "token": "Basic <base64(email:api_token)>",
-  "cloudId": "<uuid>"
+  "site":      "your-org.atlassian.net",
+  "token":     "Basic <base64(email:api_token)>",
+  "cloudId":   "<uuid>"
 }
 ```
 
-`email`, `api_token`, `site` are source-of-truth. `token` and `cloudId` are derived — regenerate them if missing.
+`email`, `api_token`, `site` are source-of-truth. `token` and `cloudId` are derived and cached.
 
-## How to call the API (Jira)
+### First-time setup (`/atlassian setup`)
 
-Use direct Atlassian REST endpoints — **not** MCP. PAT auth only works with REST.
+Ask the user for `email`, `api_token`, `site` in chat (not shell prompts). Then run **one** PowerShell script that computes the token, fetches `cloudId`, writes the config, and verifies:
 
 ```powershell
-# Load config
-$cfg = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" | ConvertFrom-Json
-$headers = @{
-  Authorization = $cfg.token
-  'User-Agent'  = 'copilot-skill/1.0'
-  Accept        = 'application/json'
-  'Content-Type'= 'application/json'
-}
-
-# Example: list my open issues (POST — GET was deprecated May 2025)
-$body = @{
-  jql = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"
-  maxResults = 30
-  fields = @("summary","status","priority","project","issuetype")
-} | ConvertTo-Json
-$result = Invoke-RestMethod -Uri "https://$($cfg.site)/rest/api/3/search/jql" -Method Post -Headers $headers -Body $body
-$result.issues | ForEach-Object {
-  [PSCustomObject]@{
-    Key = $_.key; Status = $_.fields.status.name; Summary = $_.fields.summary
-  }
-} | Format-Table -AutoSize
+$e="<EMAIL>"; $t="<TOKEN>"; $s="<SITE>"
+$auth = "Basic " + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("$e`:$t"))
+$h = @{ Authorization=$auth; "User-Agent"="atlassian-skill" }
+$cid = (Invoke-RestMethod "https://$s/_edge/tenant_info" -Headers $h).cloudId
+$me  = Invoke-RestMethod "https://$s/rest/api/3/myself" -Headers $h
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force | Out-Null
+(@{ email=$e; api_token=$t; site=$s; token=$auth; cloudId=$cid } | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
+Write-Host "OK site=$s user=$($me.displayName) cloudId=$cid"
 ```
 
-### Common Jira endpoints
+Bash/Python equivalent for Mac/Linux — same shape but uses `python3 -c`.
 
-| Task | Method + Endpoint |
-|------|-------------------|
-| Search issues (JQL) | `POST /rest/api/3/search/jql` — body: `{jql, maxResults, fields}` |
-| Get issue | `GET /rest/api/3/issue/{issueKey}?expand=renderedBody,changelog` |
-| Create issue | `POST /rest/api/3/issue` — body: `{fields: {project:{key},summary,issuetype:{name},description}}` |
-| Update issue | `PUT /rest/api/3/issue/{issueKey}` |
-| Add comment | `POST /rest/api/3/issue/{issueKey}/comment` — body: `{body: <ADF>}` |
-| Transitions | `GET /rest/api/3/issue/{issueKey}/transitions` |
-| Transition issue | `POST /rest/api/3/issue/{issueKey}/transitions` — body: `{transition:{id}}` |
-| Current user | `GET /rest/api/3/myself` |
-| Attachment content | `GET /rest/api/3/attachment/content/{id}` (auth required, save to file) |
+### Update the skill (`/atlassian update`)
 
-### Comment / description body — ADF (Atlassian Document Format)
+Re-download the latest prompt file from GitHub to the VS Code user prompts folder. **Preserves the user's config** — only overwrites the skill definition.
 
-Jira v3 API requires ADF, not plain text. Minimal shape:
+```powershell
+# Windows
+$dir = "$env:APPDATA\Code\User\prompts"
+Invoke-WebRequest "https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md" -OutFile "$dir\atlassian.prompt.md"
+Write-Host "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+```
+
+```bash
+# Mac
+DIR="$HOME/Library/Application Support/Code/User/prompts"
+curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md -o "$DIR/atlassian.prompt.md"
+echo "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+```
+
+```bash
+# Linux
+DIR="$HOME/.config/Code/User/prompts"
+curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md -o "$DIR/atlassian.prompt.md"
+echo "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+```
+
+### Expired token (401/403)
+
+1. Tell the user: "Your Atlassian API token appears expired or invalid."
+2. Point them at: https://id.atlassian.com/manage-profile/security/api-tokens
+3. Have them run `/atlassian setup` again with the new token, or edit `api_token` in the config file directly and blank out `token` so it re-derives.
+
+## How to call the API
+
+**No MCP. No `tools/call`.** Just direct HTTPS to `https://{site}/rest/api/3/*` (Jira) or `https://{site}/wiki/api/v2/*` (Confluence) with the Basic auth header from the config.
+
+### PowerShell (preferred on Windows)
+
+```powershell
+$c = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Raw | ConvertFrom-Json
+$h = @{ Authorization = $c.token; "User-Agent" = "atlassian-skill"; Accept = "application/json" }
+
+# Example: search my open issues (POST — GET /search was removed May 2025)
+$body = @{ jql = "assignee = currentUser() AND resolution = Unresolved"; fields = @("summary","status","priority"); maxResults = 20 } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "https://$($c.site)/rest/api/3/search/jql" -Headers $h -ContentType "application/json" -Body $body
+```
+
+### Python (Mac/Linux fallback)
+
+```python
+import json, urllib.request, os
+c = json.load(open(os.path.expanduser("~/.copilot/atlassian-config.json")))
+h = {"Authorization": c["token"], "User-Agent": "atlassian-skill",
+     "Accept": "application/json", "Content-Type": "application/json"}
+body = json.dumps({"jql":"assignee = currentUser() AND resolution = Unresolved",
+                   "fields":["summary","status","priority"], "maxResults":20}).encode()
+req = urllib.request.Request(f"https://{c['site']}/rest/api/3/search/jql", body, h, method="POST")
+print(urllib.request.urlopen(req).read().decode())
+```
+
+**Rules:**
+- Always send `User-Agent` — Atlassian's edge returns 403 without it.
+- Jira REST **v2 is gone (410) as of May 2025** — use `/rest/api/3/*` only.
+- `GET /rest/api/3/search` was removed — use `POST /rest/api/3/search/jql` with a JSON body.
+- Comment bodies and issue descriptions in v3 require **ADF** (see below), not plain text.
+
+## Jira REST endpoints
+
+| Action | Method | Endpoint | Notes |
+|---|---|---|---|
+| Search issues | POST | `/rest/api/3/search/jql` | body: `{jql, fields, maxResults}` |
+| Get issue | GET | `/rest/api/3/issue/{issueKey}` | |
+| Create issue | POST | `/rest/api/3/issue` | body: `{fields:{project,summary,issuetype,description(ADF)}}` |
+| Update issue | PUT | `/rest/api/3/issue/{issueKey}` | body: `{fields:{...}}` |
+| Add comment | POST | `/rest/api/3/issue/{issueKey}/comment` | body: `{body: <ADF>}` |
+| List transitions | GET | `/rest/api/3/issue/{issueKey}/transitions` | returns available transition IDs |
+| Transition issue | POST | `/rest/api/3/issue/{issueKey}/transitions` | body: `{transition:{id:"<id>"}}` |
+| Current user | GET | `/rest/api/3/myself` | verification / whoami |
+
+### Common JQL
+
+- My open issues: `assignee = currentUser() AND resolution = Unresolved`
+- By project: `project = PROJ AND resolution = Unresolved`
+- In Review: `assignee = currentUser() AND status = "In Review"`
+- Recent: `assignee = currentUser() ORDER BY updated DESC`
+
+## Confluence REST endpoints
+
+| Action | Method | Endpoint | Notes |
+|---|---|---|---|
+| Search pages | GET | `/wiki/rest/api/search?cql=<cql>` | e.g. `text ~ "deployment"` |
+| Get page | GET | `/wiki/api/v2/pages/{pageId}?body-format=storage` | |
+| Create page | POST | `/wiki/api/v2/pages` | body: `{spaceId, title, body:{representation:"storage", value:"<html>"}}` |
+| Update page | PUT | `/wiki/api/v2/pages/{pageId}` | must include current `version.number + 1` |
+
+Space ID (for create) can be fetched from `/wiki/api/v2/spaces?keys=<SPACE_KEY>`.
+
+## Atlassian Document Format (ADF)
+
+Jira v3 does **not** accept plain-text descriptions or comments — wrap the text in ADF. Minimal doc:
 
 ```json
 {
   "type": "doc",
   "version": 1,
   "content": [
-    { "type": "paragraph", "content": [ { "type": "text", "text": "Hello" } ] }
+    { "type": "paragraph",
+      "content": [ { "type": "text", "text": "Your comment text here" } ] }
   ]
 }
 ```
 
-For headings: `{"type": "heading", "attrs": {"level": 2}, "content": [...]}`.
-For bullet lists: `{"type": "bulletList", "content": [{"type":"listItem","content":[...]}]}`.
-
-## How to call the API (Confluence)
-
-```powershell
-# Search pages
-$results = Invoke-RestMethod -Uri "https://$($cfg.site)/wiki/rest/api/content?title=$([Uri]::EscapeDataString($title))&type=page&expand=space,version&limit=10" -Headers $headers
-
-# Get page
-$page = Invoke-RestMethod -Uri "https://$($cfg.site)/wiki/rest/api/content/$pageId`?expand=body.storage,version,ancestors" -Headers $headers
-
-# List spaces (browse)
-$spaces = Invoke-RestMethod -Uri "https://$($cfg.site)/wiki/rest/api/space?limit=25&type=global" -Headers $headers
-
-# Create page (storage format = XHTML)
-$body = @{
-  type = "page"
-  title = $title
-  space = @{ key = $spaceKey }
-  body = @{ storage = @{ value = "<p>Hello</p>"; representation = "storage" } }
-} | ConvertTo-Json -Depth 10
-Invoke-RestMethod -Uri "https://$($cfg.site)/wiki/rest/api/content" -Method Post -Headers $headers -Body $body
-```
-
-### Common Confluence endpoints
-
-| Task | Method + Endpoint |
-|------|-------------------|
-| Search by title | `GET /wiki/rest/api/content?title=<t>&type=page&expand=space,version` |
-| Full-text search | `GET /wiki/rest/api/content/search?cql=<cql>` |
-| Get page | `GET /wiki/rest/api/content/{pageId}?expand=body.storage,version,ancestors` |
-| List spaces | `GET /wiki/rest/api/space?limit=25&type=global` |
-| Create page | `POST /wiki/rest/api/content` — body: `{type:"page",title,space:{key},body:{storage:{value:"<html>",representation:"storage"}}}` |
-| Update page | `PUT /wiki/rest/api/content/{pageId}` (version.number must increment) |
-
-## Handling expired tokens
-
-If API call returns **401** or **403** and `email` + `api_token` are set:
-
-1. Tell the user: "Your Atlassian API token appears to be expired or invalid."
-2. Point to the config file: "Open `~/.copilot/atlassian-config.json`, replace `api_token`, and clear the `token` field. Or generate a new token at https://id.atlassian.com/manage-profile/security/api-tokens"
-3. When re-running, re-derive `token` from `email:api_token` (Base64 Basic auth).
+Use as the `body` field when adding a comment, or `description` when creating/updating an issue.
 
 ## Notes
 
-- **Config file:** `~/.copilot/atlassian-config.json` — cross-platform, never committed to git.
-- **Auth:** Basic auth with PAT (`Authorization: Basic <base64(email:token)>`) — works with Atlassian REST v3.
-- **NOT MCP:** The `mcp.atlassian.com` MCP endpoint requires OAuth bearer tokens. PAT auth only works with REST endpoints.
-- **User-Agent:** Always include a `User-Agent` header — some Atlassian edges reject requests without it.
-- **Jira API v2 is gone:** As of May 2025, `/rest/api/2/*` returns 410. Use `/rest/api/3/*` and `POST /rest/api/3/search/jql` for JQL searches (GET search was removed).
+- Basic auth with an API token has the same permissions as the user who created the token.
+- Prefer PowerShell on Windows (VS Code Agent default shell) — only fall back to Python on Mac/Linux.
+- Print concise results — filter to `key`, `summary`, `status.name`, `assignee.displayName` when a response has many fields.

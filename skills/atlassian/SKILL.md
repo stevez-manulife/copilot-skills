@@ -35,6 +35,7 @@ CONFLUENCE
 SETUP
  11. setup              — configure credentials (first-time or reset)
  12. status             — show current config (site, cloudId)
+ 13. update             — download the latest version of this skill
 
 Just type a number or describe what you want naturally.
 ```
@@ -68,6 +69,29 @@ If config is missing or user types `setup`, ask for `email`, `api_token`, `site`
 1. Tell the user: "Your Atlassian API token appears expired or invalid."
 2. Point them at: https://id.atlassian.com/manage-profile/security/api-tokens
 3. After they generate a new one, they can either edit `api_token` in the config file directly (leave `token` blank — the skill will re-derive it), or run `/atlassian setup` again.
+
+### Update the skill (`/atlassian update`)
+
+Re-download the latest `SKILL.md` from GitHub in place. **Preserves config** — only overwrites the skill file. Use the destination path that matches how this skill was installed:
+
+- Copilot CLI: `~/.agents/skills/atlassian/SKILL.md`
+- Copilot Desktop App (Win): `%APPDATA%\com.github.githubapp\app-skills\atlassian\SKILL.md`
+- Copilot Desktop App (Mac): `~/Library/Application Support/com.github.githubapp/app-skills/atlassian/SKILL.md`
+- Claude Code: `~/.claude/skills/atlassian/SKILL.md`
+
+Example (Copilot CLI on Windows):
+
+```powershell
+Invoke-WebRequest "https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/SKILL.md" -OutFile "$env:USERPROFILE\.agents\skills\atlassian\SKILL.md"
+Write-Host "✅ SKILL.md updated. Start a new chat to load the new version."
+```
+
+Bash equivalent:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/SKILL.md -o "$HOME/.agents/skills/atlassian/SKILL.md"
+echo "✅ SKILL.md updated. Start a new chat to load the new version."
+```
 
 ## How to call the API
 
