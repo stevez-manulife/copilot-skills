@@ -72,25 +72,30 @@ If config is missing or user types `setup`, ask for `email`, `api_token`, `site`
 
 ### Update the skill (`/atlassian update`)
 
-Re-download the latest `SKILL.md` from GitHub in place. **Preserves config** — only overwrites the skill file. Use the destination path that matches how this skill was installed:
+Re-download the latest `SKILL.md` from the same repo/branch it was originally installed from. **Preserves config** — only overwrites the skill file.
 
-- Copilot CLI: `~/.agents/skills/atlassian/SKILL.md`
-- Copilot Desktop App (Win): `%APPDATA%\com.github.githubapp\app-skills\atlassian\SKILL.md`
-- Copilot Desktop App (Mac): `~/Library/Application Support/com.github.githubapp/app-skills/atlassian/SKILL.md`
-- Claude Code: `~/.claude/skills/atlassian/SKILL.md`
+1. Read `source_repo_raw_base` from `~/.copilot/atlassian-config.json`. If missing, ask the user for their fork's raw base URL (e.g. `https://raw.githubusercontent.com/manulife-innersource/copilot-skills/main`) and save it back to the config.
+2. Detect where the skill was installed (based on the file path this SKILL.md was loaded from):
+   - Copilot CLI: `~/.agents/skills/atlassian/SKILL.md`
+   - Copilot Desktop App (Win): `%APPDATA%\com.github.githubapp\app-skills\atlassian\SKILL.md`
+   - Copilot Desktop App (Mac): `~/Library/Application Support/com.github.githubapp/app-skills/atlassian/SKILL.md`
+   - Claude Code: `~/.claude/skills/atlassian/SKILL.md`
+3. Re-download `{source_repo_raw_base}/skills/atlassian/SKILL.md` to that location.
 
 Example (Copilot CLI on Windows):
 
 ```powershell
-Invoke-WebRequest "https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/SKILL.md" -OutFile "$env:USERPROFILE\.agents\skills\atlassian\SKILL.md"
-Write-Host "✅ SKILL.md updated. Start a new chat to load the new version."
+$c = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Raw | ConvertFrom-Json
+Invoke-WebRequest "$($c.source_repo_raw_base)/skills/atlassian/SKILL.md" -OutFile "$env:USERPROFILE\.agents\skills\atlassian\SKILL.md"
+Write-Host "✅ SKILL.md updated from $($c.source_repo_raw_base). Start a new chat to load the new version."
 ```
 
 Bash equivalent:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/SKILL.md -o "$HOME/.agents/skills/atlassian/SKILL.md"
-echo "✅ SKILL.md updated. Start a new chat to load the new version."
+BASE=$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.copilot/atlassian-config.json')))['source_repo_raw_base'])")
+curl -fsSL "$BASE/skills/atlassian/SKILL.md" -o "$HOME/.agents/skills/atlassian/SKILL.md"
+echo "✅ SKILL.md updated from $BASE. Start a new chat to load the new version."
 ```
 
 ## How to call the API

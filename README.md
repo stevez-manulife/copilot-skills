@@ -48,6 +48,17 @@ The agent reads the file, installs the skill to the correct folder for your clie
 
 For manual install steps or usage docs, see [skills/atlassian/](./skills/atlassian/).
 
+### Forking
+
+The install prompts derive their download URL from **where you fetched them**. Fork this repo (e.g. to `manulife-innersource/copilot-skills`) and share the equivalent URL:
+
+```
+Follow the install instructions at
+https://github.com/manulife-innersource/copilot-skills/blob/main/skills/atlassian/vscode/install.prompt.md
+```
+
+No find-replace, no config edits. The skill will also remember which fork it came from (`source_repo_raw_base` in `~/.copilot/atlassian-config.json`), so `/atlassian update` pulls from the same fork.
+
 ---
 
 ## Alternative: Official Atlassian MCP Server

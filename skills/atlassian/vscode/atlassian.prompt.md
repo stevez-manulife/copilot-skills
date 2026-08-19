@@ -59,44 +59,51 @@ Schema:
 
 ### First-time setup (`/atlassian setup`)
 
-Ask the user for `email`, `api_token`, `site` in chat (not shell prompts). Then run **one** PowerShell script that computes the token, fetches `cloudId`, writes the config, and verifies:
+Ask the user for `email`, `api_token`, `site` in chat (not shell prompts). Then run **one** PowerShell script that computes the token, fetches `cloudId`, writes the config (including `source_repo_raw_base` so `/atlassian update` works from any fork), and verifies:
 
 ```powershell
-$e="<EMAIL>"; $t="<TOKEN>"; $s="<SITE>"
+$e="<EMAIL>"; $t="<TOKEN>"; $s="<SITE>"; $src="<SOURCE_REPO_RAW_BASE>"
 $auth = "Basic " + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("$e`:$t"))
 $h = @{ Authorization=$auth; "User-Agent"="atlassian-skill" }
 $cid = (Invoke-RestMethod "https://$s/_edge/tenant_info" -Headers $h).cloudId
 $me  = Invoke-RestMethod "https://$s/rest/api/3/myself" -Headers $h
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force | Out-Null
-(@{ email=$e; api_token=$t; site=$s; token=$auth; cloudId=$cid } | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
+(@{ email=$e; api_token=$t; site=$s; token=$auth; cloudId=$cid; source_repo_raw_base=$src } | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
 Write-Host "OK site=$s user=$($me.displayName) cloudId=$cid"
 ```
+
+`<SOURCE_REPO_RAW_BASE>` is the raw base URL of the fork the skill was installed from, e.g. `https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main`. The install prompt sets it automatically; leave it blank only if you didn't come from an install prompt.
 
 Bash/Python equivalent for Mac/Linux — same shape but uses `python3 -c`.
 
 ### Update the skill (`/atlassian update`)
 
-Re-download the latest prompt file from GitHub to the VS Code user prompts folder. **Preserves the user's config** — only overwrites the skill definition.
+Re-download the latest prompt file from the same fork/branch it was originally installed from. **Preserves the user's config** — only overwrites the skill definition.
+
+Read `source_repo_raw_base` from `~/.copilot/atlassian-config.json`. If missing, ask the user for their fork's raw base URL and save it. Then:
 
 ```powershell
 # Windows
+$c = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Raw | ConvertFrom-Json
 $dir = "$env:APPDATA\Code\User\prompts"
-Invoke-WebRequest "https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md" -OutFile "$dir\atlassian.prompt.md"
-Write-Host "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+Invoke-WebRequest "$($c.source_repo_raw_base)/skills/atlassian/vscode/atlassian.prompt.md" -OutFile "$dir\atlassian.prompt.md"
+Write-Host "✅ atlassian.prompt.md updated from $($c.source_repo_raw_base). Start a new chat to load the new version."
 ```
 
 ```bash
 # Mac
+BASE=$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.copilot/atlassian-config.json')))['source_repo_raw_base'])")
 DIR="$HOME/Library/Application Support/Code/User/prompts"
-curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md -o "$DIR/atlassian.prompt.md"
-echo "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+curl -fsSL "$BASE/skills/atlassian/vscode/atlassian.prompt.md" -o "$DIR/atlassian.prompt.md"
+echo "✅ atlassian.prompt.md updated from $BASE. Start a new chat to load the new version."
 ```
 
 ```bash
 # Linux
+BASE=$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.copilot/atlassian-config.json')))['source_repo_raw_base'])")
 DIR="$HOME/.config/Code/User/prompts"
-curl -fsSL https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian/vscode/atlassian.prompt.md -o "$DIR/atlassian.prompt.md"
-echo "✅ atlassian.prompt.md updated. Start a new chat to load the new version."
+curl -fsSL "$BASE/skills/atlassian/vscode/atlassian.prompt.md" -o "$DIR/atlassian.prompt.md"
+echo "✅ atlassian.prompt.md updated from $BASE. Start a new chat to load the new version."
 ```
 
 ### Expired token (401/403)

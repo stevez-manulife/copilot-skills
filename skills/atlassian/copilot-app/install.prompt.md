@@ -2,16 +2,32 @@
 
 You are installing the Atlassian skill for the **GitHub Copilot desktop app**. **Minimize shell command approvals.** Target: **2 shell commands total**.
 
+## 0. Derive the raw base URL from where you fetched this file
+
+You were told to follow instructions at a URL like:
+
+```
+https://github.com/{OWNER}/{REPO}/blob/{BRANCH}/skills/atlassian/copilot-app/install.prompt.md
+```
+
+Extract `{OWNER}`, `{REPO}`, `{BRANCH}` from that URL. Define:
+
+```
+RAW_BASE = https://raw.githubusercontent.com/{OWNER}/{REPO}/{BRANCH}
+```
+
+Use `{RAW_BASE}` in every download below — **do not hardcode any GitHub org name**. This lets the same instructions work for any fork.
+
 ## 1. Install the skill files (1 command)
 
 ```powershell
 # Windows
-$d="$env:APPDATA\com.github.githubapp\app-skills\atlassian"; $b="https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian"; New-Item -ItemType Directory -Path $d,"$d\agents" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/atlassian-config.example.json" -OutFile "$d\atlassian-config.example.json"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"
+$d="$env:APPDATA\com.github.githubapp\app-skills\atlassian"; $b="{RAW_BASE}/skills/atlassian"; New-Item -ItemType Directory -Path $d,"$d\agents" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/atlassian-config.example.json" -OutFile "$d\atlassian-config.example.json"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"
 ```
 
 ```bash
 # Mac
-D="$HOME/Library/Application Support/com.github.githubapp/app-skills/atlassian"; B="https://raw.githubusercontent.com/stevez-manulife/copilot-skills/main/skills/atlassian"; mkdir -p "$D/agents" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/atlassian-config.example.json" -o "$D/atlassian-config.example.json" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml"
+D="$HOME/Library/Application Support/com.github.githubapp/app-skills/atlassian"; B="{RAW_BASE}/skills/atlassian"; mkdir -p "$D/agents" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/atlassian-config.example.json" -o "$D/atlassian-config.example.json" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml"
 ```
 
 Restart the desktop app so it picks up the new skill.
@@ -23,6 +39,8 @@ Ask the user for:
 1. **Atlassian email**
 2. **API token** — starts with `ATATT`. If missing, generate at https://id.atlassian.com/manage-profile/security/api-tokens with scopes `read:jira-work`, `write:jira-work`, `read:confluence-content.all`, `write:confluence-content` (90-day expiry).
 3. **Site URL** — e.g. `your-org.atlassian.net`
+
+**Skip if `~/.copilot/atlassian-config.json` already exists** — just verify with `/rest/api/3/myself` and jump to step 4.
 
 ## 3. Write config + fetch cloudId + verify (1 combined command)
 
@@ -36,7 +54,7 @@ $h = @{ Authorization=$auth; "User-Agent"="atlassian-skill" }
 $cid = (Invoke-RestMethod "https://$s/_edge/tenant_info" -Headers $h).cloudId
 $me  = Invoke-RestMethod "https://$s/rest/api/3/myself" -Headers $h
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.copilot" -Force | Out-Null
-(@{ email=$e; api_token=$t; site=$s; token=$auth; cloudId=$cid } | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
+(@{ email=$e; api_token=$t; site=$s; token=$auth; cloudId=$cid; source_repo_raw_base="{RAW_BASE}" } | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json"
 Write-Host "OK site=$s user=$($me.displayName) cloudId=$cid"
 ```
 
@@ -52,7 +70,7 @@ def get(u): return json.loads(urllib.request.urlopen(urllib.request.Request(u,he
 cid=get(f'https://{s}/_edge/tenant_info')['cloudId']
 me=get(f'https://{s}/rest/api/3/myself')
 os.makedirs(os.path.expanduser('~/.copilot'),exist_ok=True)
-json.dump({'email':e,'api_token':t,'site':s,'token':auth,'cloudId':cid},open(os.path.expanduser('~/.copilot/atlassian-config.json'),'w'),indent=2)
+json.dump({'email':e,'api_token':t,'site':s,'token':auth,'cloudId':cid,'source_repo_raw_base':'{RAW_BASE}'},open(os.path.expanduser('~/.copilot/atlassian-config.json'),'w'),indent=2)
 print(f'OK site={s} user={me[\"displayName\"]} cloudId={cid}')
 "
 ```
