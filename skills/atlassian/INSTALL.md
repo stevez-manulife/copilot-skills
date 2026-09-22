@@ -153,7 +153,7 @@ When your API token expires (~90 days):
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens and create a new token
 2. Open `~/.copilot/atlassian-config.json` in any editor (VS Code, notepad, etc.)
 3. Replace the `api_token` value with the new token
-4. Set `token` to `""` (empty) — the skill will re-derive it
+4. Set `token` to `""` (empty) — the skill re-derives it as `"Basic " + Base64(email:api_token)` on the next call. Do **not** hand-write just the base64 without the `Basic ` prefix, or requests authenticate as anonymous (silent 401 / empty results).
 5. Save
 
 Next call regenerates the Basic auth header from the new token. No re-setup needed.

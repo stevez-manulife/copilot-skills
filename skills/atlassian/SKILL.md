@@ -66,6 +66,8 @@ If config is missing or user types `setup`, ask for `email`, `api_token`, `site`
 
 ### Expired token (401/403)
 
+> **First, rule out a malformed cached header.** If you get `401` on `/myself`, empty `issues[]` from `/search/jql`, or `404` on a valid `/issue/{KEY}`, the cached `token` is likely missing the `Basic ` prefix (stored as raw base64) — this authenticates as **anonymous**, not expired. Re-derive it: `token = "Basic " + Base64(email + ":" + api_token)` and retry before assuming the token is expired. (The PowerShell snippet above now self-heals this automatically.)
+
 1. Tell the user: "Your Atlassian API token appears expired or invalid."
 2. Point them at: https://id.atlassian.com/manage-profile/security/api-tokens
 3. After they generate a new one, they can either edit `api_token` in the config file directly (leave `token` blank — the skill will re-derive it), or run `/atlassian setup` again.
@@ -106,6 +108,13 @@ echo "✅ SKILL.md updated from $BASE. Start a new chat to load the new version.
 
 ```powershell
 $c = Get-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Raw | ConvertFrom-Json
+# Self-heal: always re-derive the auth header so a malformed/blank cached token can't cause silent 401s.
+# A token missing the "Basic " prefix authenticates as ANONYMOUS -> 401 on /myself, empty issues[], 404 on /issue/{key}.
+if (-not $c.token -or -not $c.token.StartsWith("Basic ")) {
+  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("$($c.email):$($c.api_token)"))
+  $c.token = "Basic $b64"
+  ($c | ConvertTo-Json) | Set-Content "$env:USERPROFILE\.copilot\atlassian-config.json" -Encoding UTF8
+}
 $h = @{ Authorization = $c.token; "User-Agent" = "atlassian-skill"; Accept = "application/json" }
 
 # Example: search my open issues (POST because GET /search was removed May 2025)
