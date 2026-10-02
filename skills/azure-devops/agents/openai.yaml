@@ -1,0 +1,5 @@
+interface:
+  display_name: "Azure DevOps"
+  short_description: "Query pipelines, builds, logs and work items via REST"
+policy:
+  allow_implicit_invocation: true
