@@ -7,6 +7,7 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 | Skill | Description |
 |-------|-------------|
 | [atlassian](./skills/atlassian/) | Query and update Jira issues and Confluence pages via Atlassian API |
+| [azure-devops](./skills/azure-devops/) | Check pipelines, builds, logs and work items via the Azure DevOps REST API |
 
 ---
 
@@ -78,3 +79,63 @@ If your organization allows local MCP proxies (Node.js `mcp-remote`), you can us
 | Enterprise policy blocks local MCP servers (like Manulife) | This repo's `/atlassian` skill (REST + PAT, no MCP) |
 | No MCP restrictions + want full product coverage | Official Atlassian MCP + their skills |
 | Want both — this repo handles what MCP can't, MCP handles the rest | Install both |
+
+---
+
+## Azure DevOps
+
+Check pipeline status, read build logs, queue runs, and query work items from your Copilot chat — no PAT, no MCP server, no browser.
+
+It reuses your existing `az login` to mint a short-lived token, then calls the Azure DevOps REST API directly. Nothing is written to disk, and it inherits exactly your permissions.
+
+Pick your client and paste the matching prompt into your Copilot chat (**Agent mode**):
+
+**VS Code Copilot Chat**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/azure-devops/vscode/install.prompt.md
+```
+
+**GitHub Copilot CLI**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/azure-devops/copilot-cli/install.prompt.md
+```
+
+**GitHub Copilot Desktop App**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/azure-devops/copilot-app/install.prompt.md
+```
+
+**Claude Code**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/azure-devops/claude-code/install.prompt.md
+```
+
+Then just ask — the skill is model-invoked, so it fires on its own:
+
+```
+check the pipeline status
+did the develop build pass?
+show the failing step's log for build 63711
+trigger the preprod pipeline on develop
+```
+
+### Why not `az devops`?
+
+The `az devops` extension is the obvious tool, and where it works this skill is unnecessary. On a locked-down corporate machine it often doesn't:
+
+| Symptom | Cause |
+|---------|-------|
+| `az extension add` fails with `CERTIFICATE_VERIFY_FAILED` | TLS-inspection proxy; `az` is Python and rejects the inspection CA, so the extension can't install at all |
+| `az` dies with `PermissionError` on `~/.azure/az.sess` | A DLP or backup agent flagged `~/.azure` as Hidden, which breaks Python's file writes on Windows |
+
+This skill calls REST directly, which sidesteps the first entirely, and carries the one-line fix for the second.
+
+For manual install steps or the full endpoint reference, see [skills/azure-devops/](./skills/azure-devops/).
