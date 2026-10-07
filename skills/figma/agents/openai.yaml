@@ -1,0 +1,5 @@
+interface:
+  display_name: "Figma"
+  short_description: "Read Figma designs via REST and implement them as code"
+policy:
+  allow_implicit_invocation: true
