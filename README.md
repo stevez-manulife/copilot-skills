@@ -8,7 +8,7 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 |-------|-------------|
 | [atlassian](./skills/atlassian/) | Query and update Jira issues and Confluence pages via Atlassian API |
 | [azure-devops](./skills/azure-devops/) | Check pipelines, builds, logs and work items via the Azure DevOps REST API |
-
+| [figma](./skills/figma/) | Read Figma designs and implement them as code via the Figma REST API |
 ---
 
 ## Atlassian
@@ -139,3 +139,53 @@ The `az devops` extension is the obvious tool, and where it works this skill is 
 This skill calls REST directly, which sidesteps the first entirely, and carries the one-line fix for the second.
 
 For manual install steps or the full endpoint reference, see [skills/azure-devops/](./skills/azure-devops/).
+
+---
+
+## Figma
+
+Turn Figma designs into code from your Copilot chat, with no MCP server. Paste a frame link and the agent pulls layout, colors, typography, and a rendered reference image, then implements it with your repo's components.
+
+It calls the Figma REST API with a read-only personal access token stored in the `FIGMA_TOKEN` environment variable (never pasted into chat).
+
+Pick your client and paste the matching prompt into your Copilot chat (**Agent mode**):
+
+**VS Code Copilot Chat**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/figma/vscode/install.prompt.md
+```
+
+**GitHub Copilot CLI**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/figma/copilot-cli/install.prompt.md
+```
+
+**GitHub Copilot Desktop App**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/figma/copilot-app/install.prompt.md
+```
+
+**Claude Code**
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/figma/claude-code/install.prompt.md
+```
+
+Then paste a Figma link (right-click a frame > **Copy link to selection**):
+
+```
+implement this design as a React component: <figma link>
+what colors and fonts does this frame use? <figma link>
+export the icons in this frame as SVG: <figma link>
+```
+
+If your organisation allows MCP servers, Figma's official MCP server (`https://mcp.figma.com/mcp`) is the richer alternative.
+
+For manual install steps or token setup, see [skills/figma/](./skills/figma/).
