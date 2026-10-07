@@ -17,6 +17,17 @@ Uses a Figma personal access token (read-only) and calls the Figma REST API dire
 
 Figma's official MCP server (remote `https://mcp.figma.com/mcp` or the desktop Dev Mode server) is the richer option where it's allowed. Enterprise Copilot policies (like Manulife's) often block third-party MCP servers, so the Figma tools never appear. This skill needs only outbound HTTPS to `api.figma.com`.
 
+## Before you install: set up your Figma token
+
+1. **Create the token.** In Figma, click your avatar > **Settings > Security > Personal access tokens > Generate new token**. Set scope **File content: Read-only** (everything else **No access**), choose an expiry, and copy the token. It is shown only once.
+2. **Store it on your computer** as `FIGMA_TOKEN`. Don't paste it into chat.
+   - Windows (PowerShell): `[Environment]::SetEnvironmentVariable('FIGMA_TOKEN','<token>','User')`
+   - Mac: `echo 'export FIGMA_TOKEN=<token>' >> ~/.zshrc`
+   - Linux: `echo 'export FIGMA_TOKEN=<token>' >> ~/.bashrc`
+3. **Restart your Copilot client** so it sees the new variable.
+
+Full steps (including a Windows GUI method, verification, and rotation) are in [INSTALL.md](./INSTALL.md#step-1-create-and-store-a-figma-token).
+
 ## Install
 
 Pick your client and paste the matching prompt into your Copilot chat (Agent mode):

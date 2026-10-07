@@ -148,6 +148,17 @@ Turn Figma designs into code from your Copilot chat, with no MCP server. Paste a
 
 It calls the Figma REST API with a read-only personal access token stored in the `FIGMA_TOKEN` environment variable (never pasted into chat).
 
+**First, set up your token:**
+
+1. In Figma, click your avatar > **Settings > Security > Personal access tokens > Generate new token**. Scope: **File content: Read-only**. Copy the token (shown only once).
+2. Store it on your computer:
+   - Windows (PowerShell): `[Environment]::SetEnvironmentVariable('FIGMA_TOKEN','<token>','User')`
+   - Mac: `echo 'export FIGMA_TOKEN=<token>' >> ~/.zshrc`
+   - Linux: `echo 'export FIGMA_TOKEN=<token>' >> ~/.bashrc`
+3. Restart your Copilot client.
+
+See [skills/figma/INSTALL.md](./skills/figma/INSTALL.md#step-1-create-and-store-a-figma-token) for detailed steps.
+
 Pick your client and paste the matching prompt into your Copilot chat (**Agent mode**):
 
 **VS Code Copilot Chat**
