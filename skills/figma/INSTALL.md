@@ -14,22 +14,53 @@ Installs the Figma skill so your Copilot agent can read Figma designs through th
 
 ## Step 1: Create and store a Figma token
 
-1. In Figma: **Settings > Security > Personal access tokens > Generate new token**.
-2. Scope: **File content: Read-only**. Pick an expiry that suits your policy.
-3. Store it as an environment variable. **Don't paste it into chat.**
+### 1a. Create a personal access token in Figma
+
+1. Open Figma in the browser (https://www.figma.com) or the desktop app and sign in.
+2. In the file browser, click your **account name / avatar** (top-left) and choose **Settings**.
+3. Open the **Security** tab and scroll to **Personal access tokens**.
+4. Click **Generate new token** and fill in:
+   - **Name**: something recognisable, e.g. `copilot-figma-skill`
+   - **Expiration**: the shortest period your team is comfortable with (e.g. 30 or 90 days)
+   - **Scopes**: **File content: Read-only**. Leave every other scope at **No access**.
+5. Click **Generate token** and **copy it immediately**. Figma shows it only once; if you lose it, generate a new one.
+
+The token starts with `figd_`. Treat it like a password: don't paste it into chat, commit it, or share it.
+
+### 1b. Store the token on your computer
+
+The skill reads the token from the `FIGMA_TOKEN` environment variable. Pick one method.
+
+**Windows: PowerShell (recommended)**
 
 ```powershell
-# Windows (persists for your user account)
-[Environment]::SetEnvironmentVariable('FIGMA_TOKEN','<token>','User')
+# Persists for your user account; no admin rights needed
+[Environment]::SetEnvironmentVariable('FIGMA_TOKEN','<paste-token-here>','User')
 ```
 
+**Windows: GUI**
+
+1. Press **Win**, type **environment variables**, and open **Edit environment variables for your account**.
+2. Under **User variables**, click **New...**.
+3. Variable name: `FIGMA_TOKEN`. Variable value: your token. Click **OK** twice.
+
+**Mac (zsh, the default shell)**
+
 ```bash
-# Mac/Linux
-echo 'export FIGMA_TOKEN=<token>' >> ~/.zshrc   # or ~/.bashrc
+echo 'export FIGMA_TOKEN=<paste-token-here>' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-Verify:
+**Linux (bash)**
+
+```bash
+echo 'export FIGMA_TOKEN=<paste-token-here>' >> ~/.bashrc
+source ~/.bashrc
+```
+
+After setting it, **restart your Copilot client** (VS Code, the Copilot app, or your terminal). Programs started before the change won't see the new variable.
+
+### 1c. Verify the token
 
 ```powershell
 Invoke-RestMethod https://api.figma.com/v1/me -Headers @{'X-Figma-Token'=[Environment]::GetEnvironmentVariable('FIGMA_TOKEN','User')} | Select-Object handle,email
@@ -38,6 +69,12 @@ Invoke-RestMethod https://api.figma.com/v1/me -Headers @{'X-Figma-Token'=[Enviro
 ```bash
 curl -fsS -H "X-Figma-Token: $FIGMA_TOKEN" https://api.figma.com/v1/me | jq '{handle,email}'
 ```
+
+It should print your Figma name and email.
+
+### Rotating or revoking the token
+
+When the token expires or may have leaked: in Figma **Settings > Security > Personal access tokens**, revoke the old token, generate a new one, and repeat step 1b with the new value.
 
 ---
 
