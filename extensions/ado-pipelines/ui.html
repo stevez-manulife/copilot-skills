@@ -1,0 +1,411 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>ADO Pipelines</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; display: flex; flex-direction: column;
+    background: var(--background-color-default, #fff);
+    color: var(--text-color-default, #1f2328);
+    font-family: var(--font-sans, -apple-system, "Segoe UI", sans-serif);
+    font-size: var(--text-body-medium, 14px);
+    line-height: var(--leading-body-medium, 20px);
+  }
+  .muted { color: var(--text-color-muted, #656d76); }
+  header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--border-color-default, #d0d7de); }
+  header .title { font-weight: var(--font-weight-semibold, 600); margin-right: 8px; }
+  input, select, button {
+    font: inherit; color: inherit; background: transparent;
+    border: 1px solid var(--border-color-default, #d0d7de); border-radius: 6px; padding: 3px 8px;
+  }
+  button { cursor: pointer; }
+  button:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+  button.active { background: color-mix(in srgb, currentColor 14%, transparent); }
+  :focus-visible { outline: 2px solid var(--color-focus-outline, #0969da); outline-offset: 1px; }
+  .spacer { flex: 1; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #list { width: 42%; min-width: 260px; overflow: auto; border-right: 1px solid var(--border-color-default, #d0d7de); }
+  #detail { flex: 1; overflow: auto; padding: 12px; min-width: 0; }
+  .row { display: flex; gap: 8px; align-items: center; padding: 6px 12px; cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--border-color-default, #d0d7de) 50%, transparent); }
+  .row:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+  .row.sel { background: color-mix(in srgb, var(--true-color-blue, #0969da) 14%, transparent); }
+  .row .main { flex: 1; min-width: 0; }
+  .row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .sub { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .star { border: none; padding: 0 4px; color: var(--text-color-muted, #656d76); }
+  .star.on { color: var(--true-color-yellow, #bf8700); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--text-color-muted, #8c959f); }
+  .s-succeeded { background: var(--true-color-green, #1a7f37); }
+  .s-failed { background: var(--true-color-red, #cf222e); }
+  .s-partiallySucceeded { background: var(--true-color-orange, #bc4c00); }
+  .s-canceled { background: var(--text-color-muted, #8c959f); }
+  .s-inProgress, .s-running { background: var(--true-color-blue, #0969da); animation: pulse 1.2s infinite; }
+  .s-notStarted, .s-pending { background: transparent; border: 2px solid var(--text-color-muted, #8c959f); }
+  .s-skipped { background: transparent; border: 2px dashed var(--text-color-muted, #8c959f); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .badge { font-size: 12px; padding: 0 6px; border-radius: 10px; border: 1px solid var(--border-color-default, #d0d7de); white-space: nowrap; }
+  h2 { margin: 0 0 4px; font-size: var(--text-title-small, 16px); font-weight: var(--font-weight-semibold, 600); }
+  h3 { margin: 16px 0 6px; font-size: 14px; font-weight: var(--font-weight-semibold, 600); }
+  a { color: var(--true-color-blue, #0969da); }
+  .folder { padding: 6px 12px 2px; font-size: 12px; font-weight: 600; }
+  .stage { border: 1px solid var(--border-color-default, #d0d7de); border-radius: 6px; margin-bottom: 8px; }
+  .stage > .hd { display: flex; gap: 8px; align-items: center; padding: 6px 10px; font-weight: 600; }
+  .job { display: flex; gap: 8px; align-items: center; padding: 4px 10px 4px 28px; cursor: pointer; }
+  .job:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+  .job.sel { background: color-mix(in srgb, var(--true-color-blue, #0969da) 14%, transparent); }
+  .issue { font-size: 12px; padding: 2px 10px 2px 46px; color: var(--true-color-red, #cf222e); white-space: pre-wrap; word-break: break-word; }
+  .issue.warning { color: var(--true-color-orange, #bc4c00); }
+  pre.log {
+    font-family: var(--font-mono, Consolas, monospace); font-size: 12px; line-height: 16px;
+    background: color-mix(in srgb, currentColor 5%, transparent); padding: 8px; border-radius: 6px;
+    white-space: pre-wrap; word-break: break-all; max-height: 60vh; overflow: auto;
+  }
+  .err { color: var(--true-color-red, #cf222e); padding: 12px; white-space: pre-wrap; }
+  .empty { padding: 24px; text-align: center; }
+  .runs-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .runbox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 8px 10px;
+    border: 1px solid var(--border-color-default, #d0d7de); border-radius: 6px; }
+  .runbox [hidden] { display: none; }
+  #runConfirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #runConfirm[hidden] { display: none; }
+  button.primary { border-color: var(--true-color-green, #1a7f37); color: var(--true-color-green, #1a7f37); font-weight: 600; }
+  button.danger { background: var(--true-color-red, #cf222e); border-color: var(--true-color-red, #cf222e); color: var(--color-white, #fff); font-weight: 600; }
+  button.danger:hover { background: color-mix(in srgb, var(--true-color-red, #cf222e) 85%, black); }
+  button:disabled { opacity: .5; cursor: default; }
+  .warn { color: var(--true-color-orange, #bc4c00); }
+  .err-inline { color: var(--true-color-red, #cf222e); }
+  .chip { display: inline-flex; gap: 4px; align-items: center; padding: 1px 4px 1px 8px; border-radius: 12px;
+    border: 1px solid var(--border-color-default, #d0d7de); background: color-mix(in srgb, currentColor 6%, transparent); }
+  .chip button { border: none; background: none; padding: 0 4px; }
+  button.link { border: none; background: none; padding: 0; text-decoration: underline; cursor: pointer; color: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">ADO Pipelines</span>
+  <input id="org" size="14" placeholder="organization" title="Organization" />
+  <select id="project" title="Project"></select>
+  <button id="tabPipes" class="active">Pipelines</button>
+  <button id="tabRecent">Recent runs</button>
+  <input id="filter" placeholder="Filter…" size="16" />
+  <label class="muted"><input type="checkbox" id="favOnly" /> ★ only</label>
+  <span id="repoChip"></span>
+  <span class="spacer"></span>
+  <label class="muted"><input type="checkbox" id="auto" checked /> auto 30s</label>
+  <button id="refresh" title="Refresh">⟳</button>
+</header>
+<main>
+  <div id="list"><div class="empty muted">Loading…</div></div>
+  <div id="detail"><div class="empty muted">Select a pipeline or run.</div></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const st = (b) => !b ? "none" : b.status === "completed" ? (b.result || "none") : (b.status || "none");
+const label = (b) => !b ? "never run" : b.status === "completed" ? b.result : b.status;
+const branch = (r) => (r || "").replace(/^refs\/heads\//, "");
+const ago = (t) => {
+  if (!t) return "";
+  const s = (Date.now() - Date.parse(t)) / 1000;
+  if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago";
+};
+const dur = (a, b) => {
+  if (!a) return ""; const s = Math.max(0, ((b ? Date.parse(b) : Date.now()) - Date.parse(a)) / 1000);
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return h ? `${h}h ${m % 60}m` : m ? `${m}m ${Math.floor(s % 60)}s` : `${Math.floor(s)}s`;
+};
+
+let state = { org: "", project: "", view: "pipelines", definitionId: null, buildId: null, logId: null, favorites: [] };
+let defs = [], recent = [];
+
+const TOKEN = "__CANVAS_TOKEN__";
+const postJson = (path, body) => fetch(path, { method: "POST", headers: { "content-type": "application/json", "x-canvas-token": TOKEN }, body: JSON.stringify(body) });
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const body = r.headers.get("content-type")?.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error(body?.error || body || r.statusText);
+  return body;
+}
+const q = (o) => new URLSearchParams({ org: state.org, project: state.project, ...o }).toString();
+const favKey = () => `${state.org}/${state.project}`;
+const favs = () => new Set((state.favorites || []).filter((f) => f.startsWith(favKey() + "#")).map((f) => +f.split("#")[1]));
+
+async function savePrefs() {
+  await postJson("/api/prefs", { org: state.org, project: state.project, favorites: state.favorites });
+}
+async function syncNav() {
+  await postJson("/api/nav", { view: state.view, definitionId: state.definitionId, buildId: state.buildId, logId: state.logId });
+}
+
+async function loadProjects() {
+  const sel = $("project");
+  if (!state.org) { sel.innerHTML = ""; return; }
+  try {
+    const projects = await api("/api/projects?" + new URLSearchParams({ org: state.org }));
+    if (state.project && !projects.includes(state.project)) projects.unshift(state.project);
+    sel.innerHTML = projects.map((p) => `<option ${p === state.project ? "selected" : ""}>${esc(p)}</option>`).join("");
+    if (!state.project && projects.length) state.project = projects[0];
+  } catch (e) {
+    sel.innerHTML = state.project ? `<option selected>${esc(state.project)}</option>` : "";
+  }
+}
+
+async function loadList() {
+  const list = $("list");
+  if (!state.org || !state.project) {
+    list.innerHTML = `<div class="empty muted">Enter your Azure DevOps organization above<br/>(the <code>{org}</code> in <code>dev.azure.com/{org}</code>), then pick a project.</div>`;
+    if (!state.org) $("org").focus();
+    return;
+  }
+  try {
+    if (state.view === "pipelines") defs = await api("/api/definitions?" + q({}));
+    else recent = await api("/api/builds?" + q({ top: 50 }));
+    renderList();
+  } catch (e) { list.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function renderList() {
+  const f = $("filter").value.trim().toLowerCase(), favOnly = $("favOnly").checked, fs = favs();
+  const list = $("list");
+  if (state.view === "pipelines") {
+    let items = defs.filter((d) => (!f || (d.name + " " + d.path).toLowerCase().includes(f)) && (!favOnly || fs.has(d.id)));
+    items.sort((a, b) => (fs.has(b.id) - fs.has(a.id)) || (a.path + a.name).localeCompare(b.path + b.name));
+    if (!items.length) {
+      const why = state.repo && !f && !favOnly
+        ? `No pipelines in ${esc(state.project)} build from <b>${esc(state.repo.label)}</b>. <button class="link" data-repo="all">Show all pipelines</button>`
+        : "No pipelines.";
+      list.innerHTML = `<div class="empty muted">${why}</div>`; return;
+    }
+    let html = "", folder = null, favDone = false;
+    for (const d of items) {
+      const isFav = fs.has(d.id);
+      const grp = isFav ? "★ Favorites" : d.path;
+      if (grp !== folder) { folder = grp; html += `<div class="folder muted">${esc(grp)}</div>`; }
+      const b = d.latest;
+      html += `<div class="row ${state.definitionId === d.id ? "sel" : ""}" data-def="${d.id}">
+        <span class="dot s-${st(b)}" title="${esc(label(b))}"></span>
+        <div class="main"><div class="name">${esc(d.name)}</div>
+        <div class="sub muted">${b ? `${esc(b.buildNumber)} · ${esc(branch(b.sourceBranch))} · ${ago(b.finishTime || b.startTime || b.queueTime)}` : "never run"}</div></div>
+        <button class="star ${isFav ? "on" : ""}" data-star="${d.id}" title="Favorite">${isFav ? "★" : "☆"}</button></div>`;
+    }
+    list.innerHTML = html;
+  } else {
+    const items = recent.filter((b) => !f || `${b.definition?.name} ${b.buildNumber} ${b.sourceBranch} ${b.requestedFor}`.toLowerCase().includes(f))
+      .filter((b) => !favOnly || fs.has(b.definition?.id));
+    list.innerHTML = items.length ? items.map((b) => `<div class="row ${state.buildId === b.id ? "sel" : ""}" data-build="${b.id}" data-bdef="${b.definition?.id}">
+      <span class="dot s-${st(b)}" title="${esc(label(b))}"></span>
+      <div class="main"><div class="name">${esc(b.definition?.name)} <span class="muted">${esc(b.buildNumber)}</span></div>
+      <div class="sub muted">${esc(branch(b.sourceBranch))} · ${esc(b.requestedFor)} · ${ago(b.queueTime)}</div></div></div>`).join("")
+      : `<div class="empty muted">No runs.</div>`;
+  }
+}
+
+async function renderDetail() {
+  const el = $("detail");
+  if (state.buildId) return renderBuild(el);
+  if (state.definitionId) return renderRuns(el);
+  el.innerHTML = `<div class="empty muted">Select a pipeline or run.</div>`;
+}
+
+async function renderRuns(el) {
+  const d = defs.find((x) => x.id === state.definitionId);
+  const forDef = state.definitionId;
+  try {
+    const [runs, info] = await Promise.all([
+      api("/api/builds?" + q({ definitionId: forDef, top: 25 })),
+      api("/api/definition?" + q({ definitionId: forDef })).catch(() => null),
+    ]);
+    if (state.definitionId !== forDef || state.buildId) return;
+    const name = d?.name || info?.name || runs[0]?.definition?.name || `Pipeline ${forDef}`;
+    const defBranch = branch(info?.defaultBranch || "");
+    const branches = [...new Set([defBranch, ...runs.map((b) => branch(b.sourceBranch))].filter(Boolean))];
+    const prev = $("runPanel")?.dataset.def == forDef ? $("runBranch")?.value : null;
+    el.innerHTML = `<div class="runs-head"><h2>${esc(name)}</h2>
+      ${(d?.webUrl || info?.webUrl) ? `<a href="${esc(d?.webUrl || info?.webUrl)}" target="_blank" rel="noopener">Open in ADO ↗</a>` : ""}</div>
+      <div class="muted">${esc(d?.path || info?.path || "")} · definition ${forDef}${info?.repository ? ` · repo ${esc(info.repository)}` : ""}</div>
+      <div id="runPanel" class="runbox" data-def="${forDef}">
+        <label class="muted" for="runBranch">Branch</label>
+        <input id="runBranch" list="runBranches" size="28" value="${esc(prev ?? defBranch)}" placeholder="default branch" />
+        <datalist id="runBranches">${branches.map((b) => `<option value="${esc(b)}">`).join("")}</datalist>
+        <button id="runBtn" class="primary">▶ Run pipeline</button>
+        <span id="runConfirm" hidden><span class="warn">Run <b>${esc(name)}</b> on <b id="runWhich"></b>? This may deploy.</span>
+          <button id="runYes" class="danger">Confirm run</button><button id="runNo">Cancel</button></span>
+        <span id="runMsg"></span></div>
+      <h3>Recent runs</h3>` +
+      (runs.length ? runs.map((b) => `<div class="row" data-build="${b.id}">
+        <span class="dot s-${st(b)}" title="${esc(label(b))}"></span>
+        <div class="main"><div class="name">${esc(b.buildNumber)} <span class="badge">${esc(label(b))}</span></div>
+        <div class="sub muted">${esc(branch(b.sourceBranch))} · ${esc(b.reason)} · ${esc(b.requestedFor)} · ${ago(b.queueTime)} · ${dur(b.startTime, b.finishTime)}</div></div></div>`).join("")
+      : `<div class="muted">No runs yet.</div>`);
+    wireRunPanel(forDef);
+  } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function wireRunPanel(defId) {
+  const btn = $("runBtn"), conf = $("runConfirm"), msg = $("runMsg"), input = $("runBranch");
+  if (!btn) return;
+  const reset = () => { conf.hidden = true; btn.hidden = false; input.disabled = false; };
+  btn.onclick = () => {
+    $("runWhich").textContent = input.value.trim() || "default branch";
+    btn.hidden = true; conf.hidden = false; input.disabled = true; msg.textContent = "";
+    $("runYes").focus();
+  };
+  $("runNo").onclick = reset;
+  $("runYes").onclick = async () => {
+    $("runYes").disabled = true; msg.className = "muted"; msg.textContent = "Queueing…";
+    try {
+      const r = await postJson("/api/queue", { org: state.org, project: state.project, definitionId: defId, branch: input.value.trim() || undefined });
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error || r.statusText);
+      state.buildId = b.id; state.logId = null;
+      loadList(); renderDetail();
+    } catch (e) {
+      msg.className = "err-inline"; msg.textContent = e.message; $("runYes").disabled = false; reset();
+    }
+  };
+}
+
+async function renderBuild(el) {
+  try {
+    const [b, tl] = await Promise.all([
+      api("/api/build?" + q({ buildId: state.buildId })),
+      api("/api/timeline?" + q({ buildId: state.buildId })),
+    ]);
+    const byParent = {};
+    for (const r of tl) (byParent[r.parentId || "root"] ||= []).push(r);
+    for (const k in byParent) byParent[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const jobsUnder = (id) => {
+      const out = [];
+      for (const c of byParent[id] || []) { if (c.type === "Job") out.push(c); else if (c.type === "Phase") out.push(...jobsUnder(c.id)); }
+      return out;
+    };
+    const tasksUnder = (id) => (byParent[id] || []).filter((x) => x.type === "Task");
+    const stages = tl.filter((r) => r.type === "Stage").sort((a, b) => a.order - b.order);
+    const rs = (r) => r.state === "completed" ? (r.result || "none") : r.state;
+    const issues = (r) => [r, ...tasksUnder(r.id)].flatMap((x) => x.issues || [])
+      .map((i) => `<div class="issue ${i.type === "warning" ? "warning" : ""}">${esc(i.message)}</div>`).join("");
+    const jobHtml = (j) => `<div class="job ${state.logId === j.logId ? "sel" : ""}" data-job="${esc(j.id)}" ${j.logId ? `data-log="${j.logId}"` : ""}>
+        <span class="dot s-${rs(j)}" title="${esc(rs(j))}"></span><span style="flex:1">${esc(j.name)}</span>
+        <span class="muted">${dur(j.startTime, j.finishTime)}</span></div>${issues(j)}`;
+    let body = stages.length
+      ? stages.map((s) => `<div class="stage"><div class="hd"><span class="dot s-${rs(s)}"></span><span style="flex:1">${esc(s.name)}</span>
+          <span class="muted">${dur(s.startTime, s.finishTime)}</span></div>${jobsUnder(s.id).map(jobHtml).join("")}</div>`).join("")
+      : tl.filter((r) => r.type === "Job").sort((a, b) => a.order - b.order).map(jobHtml).join("") || `<div class="muted">No timeline yet.</div>`;
+    el.innerHTML = `<div class="runs-head"><button id="back">← Runs</button><h2>${esc(b.definition?.name)} · ${esc(b.buildNumber)}</h2>
+      <span class="badge">${esc(label(b))}</span>${b.webUrl ? `<a href="${esc(b.webUrl)}" target="_blank" rel="noopener">Open in ADO ↗</a>` : ""}</div>
+      <div class="muted">${esc(branch(b.sourceBranch))} @ ${esc((b.sourceVersion || "").slice(0, 8))} · ${esc(b.reason)} · ${esc(b.requestedFor)} · queued ${ago(b.queueTime)} · ${dur(b.startTime, b.finishTime)}</div>
+      <h3>Stages &amp; jobs</h3>${body}<div id="logbox"></div>`;
+    $("back").onclick = () => { state.definitionId = b.definition?.id ?? state.definitionId; state.buildId = null; state.logId = null; syncNav(); renderList(); renderDetail(); };
+    if (state.logId) loadLog();
+  } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+async function loadLog() {
+  const box = $("logbox"); if (!box) return;
+  box.innerHTML = `<h3>Log</h3><div class="muted">Loading…</div>`;
+  try {
+    const text = await api("/api/log?" + q({ buildId: state.buildId, logId: state.logId }));
+    const lines = text.split(/\r?\n/), tail = lines.slice(-2000);
+    box.innerHTML = `<h3>Log ${lines.length > tail.length ? `<span class="muted">(last ${tail.length} of ${lines.length} lines)</span>` : ""}</h3><pre class="log">${esc(tail.join("\n"))}</pre>`;
+    const pre = box.querySelector("pre"); pre.scrollTop = pre.scrollHeight;
+  } catch (e) { box.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function setView(v) {
+  state.view = v; $("tabPipes").classList.toggle("active", v === "pipelines"); $("tabRecent").classList.toggle("active", v === "recent");
+}
+
+function renderRepoChip() {
+  const el = $("repoChip");
+  if (state.repo) el.innerHTML = `<span class="chip" title="Only pipelines building this repository">Repo: ${esc(state.repo.label)}<button data-repo="all" title="Show all pipelines">✕</button></span>`;
+  else if (state.detectedRepo) el.innerHTML = `<button data-repo="detected" title="Only show pipelines building the session's repository">Only ${esc(state.detectedRepo.label)}</button>`;
+  else el.innerHTML = "";
+}
+
+async function setRepo(useDetected) {
+  const r = await api("/api/repo", { method: "POST", headers: { "content-type": "application/json", "x-canvas-token": TOKEN }, body: JSON.stringify({ useDetected }) });
+  state.repo = r.repo; state.definitionId = state.buildId = state.logId = null;
+  renderRepoChip(); syncNav(); loadList(); renderDetail();
+}
+
+document.addEventListener("click", async (e) => {
+  const rb = e.target.closest("[data-repo]");
+  if (rb) { setRepo(rb.dataset.repo === "detected"); return; }
+  const star = e.target.closest("[data-star]");
+  if (star) {
+    e.stopPropagation(); const key = `${favKey()}#${star.dataset.star}`;
+    state.favorites = state.favorites.includes(key) ? state.favorites.filter((x) => x !== key) : [...state.favorites, key];
+    renderList(); savePrefs(); return;
+  }
+  const job = e.target.closest("[data-job]");
+  if (job) {
+    if (!job.dataset.log) return;
+    state.logId = +job.dataset.log; document.querySelectorAll(".job").forEach((j) => j.classList.toggle("sel", j === job));
+    syncNav(); loadLog(); return;
+  }
+  const row = e.target.closest(".row");
+  if (!row) return;
+  if (row.dataset.def) { state.definitionId = +row.dataset.def; state.buildId = null; state.logId = null; }
+  else if (row.dataset.build) { state.buildId = +row.dataset.build; state.logId = null; if (row.dataset.bdef) state.definitionId = +row.dataset.bdef; }
+  syncNav(); renderList(); renderDetail();
+});
+$("tabPipes").onclick = () => { setView("pipelines"); syncNav(); loadList(); };
+$("tabRecent").onclick = () => { setView("recent"); syncNav(); loadList(); };
+$("filter").oninput = renderList;
+$("favOnly").onchange = renderList;
+$("refresh").onclick = () => { loadList(); renderDetail(); };
+$("project").onchange = async () => {
+  state.project = $("project").value; state.definitionId = state.buildId = state.logId = null;
+  await savePrefs(); syncNav(); loadList(); renderDetail();
+};
+$("org").onchange = async () => {
+  state.org = $("org").value.trim(); state.project = ""; state.definitionId = state.buildId = state.logId = null;
+  await loadProjects(); await savePrefs(); syncNav(); loadList(); renderDetail();
+};
+
+setInterval(() => {
+  if (!$("auto").checked || document.hidden || !state.org || !state.project) return;
+  loadList();
+  // Only refresh detail when something might still be changing.
+  if (state.buildId && !document.querySelector("#detail .badge")?.textContent.match(/succeeded|failed|canceled|partiallySucceeded/)) {
+    const scroll = $("detail").scrollTop; renderDetail().then(() => { $("detail").scrollTop = scroll; });
+  } else if (state.definitionId && !state.buildId) {
+    const busy = $("runConfirm") && (!$("runConfirm").hidden || document.activeElement === $("runBranch"));
+    if (!busy) renderDetail();
+  }
+}, 30000);
+
+async function applyNav(nav) {
+  const orgChanged = nav.org && nav.org !== state.org, projChanged = nav.project && nav.project !== state.project;
+  Object.assign(state, nav);
+  $("org").value = state.org;
+  if (orgChanged) await loadProjects();
+  else if (projChanged) $("project").value = state.project;
+  setView(state.view || "pipelines");
+  renderRepoChip();
+  await loadList(); await renderDetail();
+}
+
+(async () => {
+  const init = await api("/api/state");
+  Object.assign(state, init);
+  $("org").value = state.org;
+  await loadProjects();
+  setView(state.view || "pipelines");
+  renderRepoChip();
+  await loadList(); await renderDetail();
+  const es = new EventSource("/events");
+  es.onmessage = (m) => {
+    const msg = JSON.parse(m.data);
+    if (msg.type === "navigate") applyNav(msg.nav);
+    else if (msg.type === "refresh") { loadList(); renderDetail(); }
+  };
+})();
+</script>
+</body>
+</html>

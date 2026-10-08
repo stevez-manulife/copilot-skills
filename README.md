@@ -9,6 +9,14 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 | [atlassian](./skills/atlassian/) | Query and update Jira issues and Confluence pages via Atlassian API |
 | [azure-devops](./skills/azure-devops/) | Check pipelines, builds, logs and work items via the Azure DevOps REST API |
 | [figma](./skills/figma/) | Read Figma designs and implement them as code via the Figma REST API |
+
+## Available Extensions
+
+Extensions add an interactive canvas (side panel) to the GitHub Copilot desktop app.
+
+| Extension | Description |
+|-----------|-------------|
+| [ado-pipelines](./extensions/ado-pipelines/) | Dashboard of Azure DevOps pipelines, runs, stages and logs, with a button to queue runs |
 ---
 
 ## Atlassian
@@ -200,3 +208,28 @@ export the icons in this frame as SVG: <figma link>
 If your organisation allows MCP servers, Figma's official MCP server (`https://mcp.figma.com/mcp`) is the richer alternative.
 
 For manual install steps or token setup, see [skills/figma/](./skills/figma/).
+
+---
+
+## ADO Pipelines canvas
+
+A side panel in the **GitHub Copilot desktop app** showing your Azure DevOps pipelines, their latest status, recent runs, stages, jobs and logs. You can queue a run from the panel after picking a branch and confirming. In a session opened on a git repository, it shows only that repository's pipelines.
+
+It uses your `az login` like the Azure DevOps skill, and works alongside it: the skill answers questions in chat, the canvas gives you a dashboard to click through.
+
+In the desktop app, paste:
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/extensions/ado-pipelines/copilot-app/install.prompt.md
+```
+
+Then ask:
+
+```
+open the ADO pipelines canvas
+why did build 63711 fail?
+run the preprod pipeline on develop
+```
+
+For details, see [extensions/ado-pipelines/](./extensions/ado-pipelines/).
