@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <body style="font: 12px sans-serif; margin: 12px">
+    <div>Bridge token (from server output):</div>
+    <input id="token" style="width: 100%; margin: 6px 0" />
+    <button id="connect">Connect</button>
+    <div id="status" style="margin-top: 8px">Not connected</div>
+    <script>
+      const BASE = 'http://127.0.0.1:9230';
+      let token = '';
+      let running = false;
+
+      const statusEl = document.getElementById('status');
+      const pending = new Map();
+
+      onmessage = (e) => {
+        const m = e.data.pluginMessage;
+        if (m.type === 'token' && m.token) {
+          document.getElementById('token').value = m.token;
+          start(m.token);
+        }
+        if (m.type === 'result') {
+          const done = pending.get(m.id);
+          if (done) done(m);
+        }
+      };
+
+      document.getElementById('connect').onclick = () => {
+        const t = document.getElementById('token').value.trim();
+        parent.postMessage({ pluginMessage: { type: 'saveToken', token: t } }, '*');
+        start(t);
+      };
+
+      function runInPlugin(job) {
+        return new Promise((resolve) => {
+          pending.set(job.id, resolve);
+          parent.postMessage({ pluginMessage: { type: 'run', id: job.id, script: job.script } }, '*');
+        });
+      }
+
+      async function start(t) {
+        token = t;
+        if (running) return;
+        running = true;
+        while (true) {
+          try {
+            const r = await fetch(BASE + '/poll', { headers: { 'X-Bridge-Token': token } });
+            if (r.status === 401) {
+              statusEl.textContent = 'Bad token';
+              running = false;
+              return;
+            }
+            const job = await r.json();
+            statusEl.textContent = 'Connected';
+            if (job.idle) continue;
+            const m = await runInPlugin(job);
+            pending.delete(job.id);
+            await fetch(BASE + '/result', {
+              method: 'POST',
+              headers: { 'X-Bridge-Token': token, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: job.id, ok: m.ok, value: m.value, error: m.error }),
+            });
+          } catch (err) {
+            statusEl.textContent = 'Server unreachable, retrying';
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

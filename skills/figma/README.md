@@ -13,6 +13,10 @@ Uses a Figma personal access token (read-only) and calls the Figma REST API dire
 - List a file's pages, frames, published styles, and components
 - Read file comments
 
+## What it cannot do: write to Figma
+
+The token and REST API are **read-only**. Writing uses the Figma Plugin API instead, with no MCP server and nothing to install, in the **GitHub Copilot app**: the agent opens the file in a browser canvas (signed in to Figma) and runs `figma.*` JavaScript in the page with the canvas action `evaluate_javascript`, then checks with `screenshot_page`. It requires a **Full seat** with edit access to a Design file; a Dev seat cannot write. See "Writing to Figma" in SKILL.md. For **Figma Desktop**, a bundled dev plugin plus local server (`bridge/`) lets the agent send scripts without pasting. For Manulife CDS, pair with the `mux-figma` skill from `manulife-innersource/mux-core`.
+
 ## Why not the Figma MCP server?
 
 Figma's official MCP server (remote `https://mcp.figma.com/mcp` or the desktop Dev Mode server) is the richer option where it's allowed. Enterprise Copilot policies (like Manulife's) often block third-party MCP servers, so the Figma tools never appear. This skill needs only outbound HTTPS to `api.figma.com`.

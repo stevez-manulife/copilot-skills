@@ -1,0 +1,13 @@
+{
+  "name": "Copilot Figma Bridge",
+  "id": "copilot-figma-bridge-dev",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "devAllowedDomains": ["http://localhost:9230", "http://127.0.0.1:9230"],
+    "reasoning": "Polls a local bridge server on the developer's machine for Plugin API scripts."
+  }
+}
