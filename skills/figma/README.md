@@ -13,9 +13,34 @@ Uses a Figma personal access token (read-only) and calls the Figma REST API dire
 - List a file's pages, frames, published styles, and components
 - Read file comments
 
-## What it cannot do: write to Figma
+## Writing to Figma
 
-The token and REST API are **read-only**. Writing uses the Figma Plugin API instead, with no MCP server and nothing to install, in the **GitHub Copilot app**: the agent opens the file in a browser canvas (signed in to Figma) and runs `figma.*` JavaScript in the page with the canvas action `evaluate_javascript`, then checks with `screenshot_page`. It requires a **Full seat** with edit access to a Design file; a Dev seat cannot write. See "Writing to Figma" in SKILL.md. For **Figma Desktop**, a bundled dev plugin plus local server (`bridge/`) lets the agent send scripts without pasting. For Manulife CDS, pair with the `mux-figma` skill from `manulife-innersource/mux-core`.
+The token and REST API are **read-only**, so reads and writes work differently. Writing uses the Figma Plugin API with no MCP server. It needs a **Full seat** with edit access to a Design file; a Dev seat cannot write. Pick one method:
+
+### Option A: Figma Desktop bridge (automatic)
+
+A dev plugin in Figma Desktop talks to a small local server (both in `bridge/`), so the agent can write directly and read results back.
+
+One-time setup:
+
+1. In Figma Desktop: **Plugins > Development > Import plugin from manifest...** and choose `bridge/manifest.json` from the installed skill folder.
+
+Each session:
+
+1. Open a Design file you can edit and run **Plugins > Development > Copilot Figma Bridge**. Keep it open.
+2. In your Copilot client, ask the agent to start the bridge (`node bridge/server.js`). It prints a token.
+3. Paste the token into the plugin window and click **Connect**. The plugin should show "Connected".
+4. Ask Copilot to make the change, for example "create a card frame in this file". The agent sends Plugin API scripts to the local server and the plugin runs them.
+5. Stop the server when you are done.
+
+Requires Node. The server listens on `127.0.0.1` only and needs the token, but it runs code in your open file, so use it on files you trust.
+
+### Option B: Copilot app browser canvas (no install)
+
+In the **GitHub Copilot app**, the agent opens the file in a browser canvas that you have signed in to Figma, and runs `figma.*` JavaScript in the page with `evaluate_javascript`, then checks with `screenshot_page`. Sign in yourself in the panel, never in chat.
+
+Details for both are in "Writing to Figma" in [SKILL.md](./SKILL.md). For Manulife CDS, pair with the `mux-figma` skill from `manulife-innersource/mux-core`.
+
 
 ## Why not the Figma MCP server?
 
