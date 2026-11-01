@@ -22,13 +22,15 @@ Use `{RAW_BASE}` in every download below. **Do not hardcode any GitHub org name.
 
 ```powershell
 # Windows
-$d="$env:USERPROFILE\.claude\skills\figma"; $b="{RAW_BASE}/skills/figma"; New-Item -ItemType Directory -Path $d,"$d\agents" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"
+$d="$env:USERPROFILE\.claude\skills\figma"; $b="{RAW_BASE}/skills/figma"; New-Item -ItemType Directory -Path $d,"$d\agents","$d\bridge" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"; foreach($f in 'server.js','manifest.json','code.js','ui.html'){ Invoke-WebRequest "$b/bridge/$f" -OutFile "$d\bridge\$f" }
 ```
 
 ```bash
 # Mac/Linux
-D="$HOME/.claude/skills/figma"; B="{RAW_BASE}/skills/figma"; mkdir -p "$D/agents" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml"
+D="$HOME/.claude/skills/figma"; B="{RAW_BASE}/skills/figma"; mkdir -p "$D/agents" "$D/bridge" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml" && for f in server.js manifest.json code.js ui.html; do curl -fsSL "$B/bridge/$f" -o "$D/bridge/$f"; done
 ```
+
+The `bridge/` files are only used for optional writing to Figma (step 4).
 
 ## 2. Verify the Figma token (1 command)
 
@@ -67,3 +69,10 @@ Start a new session for the skill to register, then try:
 ```
 
 Mention that the skill needs a Figma link with a `node-id` (right-click a frame > **Copy link to selection**) and that the file must be shared with the token owner.
+
+## 4. Optional: writing to Figma (user steps, do not run)
+
+Reading works now. Writing to the canvas needs a **Full seat** (a Dev seat is read-only), **Figma Desktop**, and Node. Tell the user:
+
+1. One time: Figma Desktop > Plugins > Development > **Import plugin from manifest...** > `%USERPROFILE%\.claude\skills\figma\bridge\manifest.json` (Mac/Linux: `~/.claude/skills/figma/bridge/manifest.json`).
+2. Each session: open an editable Design file, run **Plugins > Development > Copilot Figma Bridge**, then ask Claude Code to make the change. The agent starts `bridge/server.js` and asks the user to paste the printed token into the plugin (see "Writing to Figma" in SKILL.md).

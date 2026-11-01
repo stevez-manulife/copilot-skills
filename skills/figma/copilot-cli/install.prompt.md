@@ -22,12 +22,12 @@ Use `{RAW_BASE}` in every download below. **Do not hardcode any GitHub org name.
 
 ```powershell
 # Windows
-$d="$env:USERPROFILE\.agents\skills\figma"; $b="{RAW_BASE}/skills/figma"; New-Item -ItemType Directory -Path $d,"$d\agents" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"
+$d="$env:USERPROFILE\.agents\skills\figma"; $b="{RAW_BASE}/skills/figma"; New-Item -ItemType Directory -Path $d,"$d\agents","$d\bridge" -Force | Out-Null; Invoke-WebRequest "$b/SKILL.md" -OutFile "$d\SKILL.md"; Invoke-WebRequest "$b/agents/openai.yaml" -OutFile "$d\agents\openai.yaml"; foreach($f in 'server.js','manifest.json','code.js','ui.html'){ Invoke-WebRequest "$b/bridge/$f" -OutFile "$d\bridge\$f" }
 ```
 
 ```bash
 # Mac/Linux
-D="$HOME/.agents/skills/figma"; B="{RAW_BASE}/skills/figma"; mkdir -p "$D/agents" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml"
+D="$HOME/.agents/skills/figma"; B="{RAW_BASE}/skills/figma"; mkdir -p "$D/agents" "$D/bridge" && curl -fsSL "$B/SKILL.md" -o "$D/SKILL.md" && curl -fsSL "$B/agents/openai.yaml" -o "$D/agents/openai.yaml" && for f in server.js manifest.json code.js ui.html; do curl -fsSL "$B/bridge/$f" -o "$D/bridge/$f"; done
 ```
 
 ## 2. Verify the Figma token (1 command)
