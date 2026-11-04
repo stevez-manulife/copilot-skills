@@ -9,6 +9,7 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 | [atlassian](./skills/atlassian/) | Query and update Jira issues and Confluence pages via Atlassian API |
 | [azure-devops](./skills/azure-devops/) | Check pipelines, builds, logs and work items via the Azure DevOps REST API |
 | [figma](./skills/figma/) | Read Figma designs and implement them as code via the Figma REST API |
+| [outlook-mail](./skills/outlook-mail/) | Read-only list, search and read of Outlook mail via classic Outlook COM (Windows) |
 
 ## Available Extensions
 
@@ -208,6 +209,29 @@ export the icons in this frame as SVG: <figma link>
 If your organisation allows MCP servers, Figma's official MCP server (`https://mcp.figma.com/mcp`) is the richer alternative.
 
 For manual install steps or token setup, see [skills/figma/](./skills/figma/).
+
+---
+
+## Outlook Mail
+
+Check your inbox, search mail, and read messages from your Copilot chat — read-only, no MCP server, no Microsoft Graph. It drives classic Outlook on your Windows PC through COM, so it needs **classic Outlook** installed (New Outlook alone won't work). It cannot send, draft, or delete.
+
+Paste into your Copilot chat (**Agent mode**) — swap `copilot-cli` for `copilot-app` or `claude-code` as needed:
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/outlook-mail/copilot-cli/install.prompt.md
+```
+
+Then ask:
+
+```
+what's in my inbox today?
+find emails from <name> about <topic> this week
+read the latest unread email
+```
+
+For manual install steps, see [skills/outlook-mail/](./skills/outlook-mail/).
 
 ---
 

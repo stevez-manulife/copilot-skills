@@ -1,0 +1,5 @@
+interface:
+  display_name: "Outlook Mail"
+  short_description: "Read-only search and reading of the Outlook mailbox via classic Outlook COM"
+policy:
+  allow_implicit_invocation: true
