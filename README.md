@@ -236,6 +236,29 @@ For manual install steps, see [skills/outlook-mail/](./skills/outlook-mail/).
 
 ---
 
+## Windows UI Automation
+
+Let your agent see and operate native Windows desktop apps (Notepad, Teams, Explorer, …) through the UI Automation accessibility tree — list windows, snapshot an app's elements, click, type, and read values. One PowerShell script, no external binaries. Windows only; the agent confirms before destructive actions.
+
+Paste into your Copilot chat (**Agent mode**) — swap `copilot-app` for `vscode`, `claude-code` (Claude Desktop too) or `copilot-cli` as needed:
+
+```
+Follow the install instructions at
+https://github.com/stevez-manulife/copilot-skills/blob/main/skills/windows-ui-automation/copilot-app/install.prompt.md
+```
+
+Then ask:
+
+```
+list my open windows
+open Notepad and type "hello"
+what buttons are in the Calculator window?
+```
+
+For manual install steps, see [skills/windows-ui-automation/](./skills/windows-ui-automation/).
+
+---
+
 ## ADO Pipelines canvas
 
 A side panel in the **GitHub Copilot desktop app** showing your Azure DevOps pipelines, their latest status, recent runs, stages, jobs and logs. You can queue a run from the panel after picking a branch and confirming. In a session opened on a git repository, it shows only that repository's pipelines.
