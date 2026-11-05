@@ -10,6 +10,7 @@ A collection of GitHub Copilot agent skills for enterprise tooling.
 | [azure-devops](./skills/azure-devops/) | Check pipelines, builds, logs and work items via the Azure DevOps REST API |
 | [figma](./skills/figma/) | Read Figma designs and implement them as code via the Figma REST API |
 | [outlook-mail](./skills/outlook-mail/) | Read-only list, search and read of Outlook mail via classic Outlook COM (Windows) |
+| [windows-ui-automation](./skills/windows-ui-automation/) | See and operate native Windows desktop apps via the UI Automation accessibility tree |
 
 ## Available Extensions
 
