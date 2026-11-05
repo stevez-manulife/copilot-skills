@@ -1,0 +1,5 @@
+interface:
+  display_name: "Windows UI Automation"
+  short_description: "See and operate native Windows desktop apps via the UI Automation accessibility tree"
+policy:
+  allow_implicit_invocation: true
