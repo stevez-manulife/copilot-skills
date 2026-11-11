@@ -37,7 +37,7 @@ Requires Node. The server listens on `127.0.0.1` only and needs the token, but i
 
 ### Option B: Copilot app browser canvas (no install)
 
-In the **GitHub Copilot app**, the agent opens the file in a browser canvas that you have signed in to Figma, and runs `figma.*` JavaScript in the page with `evaluate_javascript`, then checks with `screenshot_page`. Sign in yourself in the panel, never in chat.
+In the **GitHub Copilot app**, the agent opens the file (or a new design) in a browser canvas, signs in through SSO with your Figma account email, and runs `figma.*` JavaScript in the page. Each new panel or session signs in again; complete any password or MFA prompt in the panel yourself, never in chat.
 
 Details for both are in "Writing to Figma" in [SKILL.md](./SKILL.md). For Manulife CDS, pair with the `mux-figma` skill from `manulife-innersource/mux-core`.
 
