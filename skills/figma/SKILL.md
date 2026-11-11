@@ -106,7 +106,7 @@ Requirements: Copilot app (the canvas is unavailable in CLI and VS Code chat), a
 1. Login email: the `email` from `GET /me` (Setup above). No token: ask the user once for their work email. An email is not a secret.
 2. `open_canvas` (`canvasId: "browser"`, `url: "https://www.figma.com/login"`), then `read_page`.
 3. Click "Use single sign-on", `type_in_page` the email into EMAIL, click "Log in" (click once more if the page doesn't change), wait about 5 seconds, `read_page`.
-4. Signed in = the page is Figma home or a file. A password or MFA prompt: ask the user to finish it in the panel; never ask for or type passwords or codes.
+4. Signed in = the page is Figma home or a file. On a password or MFA prompt (common on a Mac, where the identity provider may not recognise the panel), ask the user to finish it, then `read_page` every few seconds until signed in. The prompt may appear in the panel or in a system browser tab opened on a figma.com URL; the panel continues once it completes. Never ask for or type passwords or codes.
 
 A signed-out panel opening a private file shows "we couldn't find that one" instead of redirecting to login; treat that page as signed out.
 
